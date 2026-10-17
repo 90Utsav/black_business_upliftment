@@ -45,6 +45,11 @@
   color: var(--ink);
 }
 
+.login {
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .cta {
   background: var(--ink);
   color: #fff !important;
