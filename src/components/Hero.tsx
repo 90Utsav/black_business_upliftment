@@ -41,7 +41,7 @@ export default function Hero() {
             <a href="#how-it-works" className={styles.primary}>
               Try the Demo
             </a>
-            <a href="#grants" className={styles.secondary}>
+            <a href="/grants" className={styles.secondary}>
               View Active Grants <span aria-hidden="true">&rarr;</span>
             </a>
           </div>
