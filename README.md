@@ -28,11 +28,13 @@ src/
   data/
     grantTypes.ts                Grant shape + option labels (audiences, focus areas...)
     grants.ts                    SAMPLE grant listings (fictional), split in two parts
+    stories.ts                   SAMPLE success stories (fictional composites)
   lib/
     grantSearch.ts               pure filter/rank logic + URL param (de)serialisation
   pages/
     Home.tsx                     landing page (Hero + HowItWorks)
     Grants.tsx                   grants database with background-based matching
+    Stories.tsx                  featured story + grid of community stories
     SignIn.tsx / SignUp.tsx      auth forms
     ForgotPassword.tsx           reset request + confirmation state
     Dashboard.tsx                placeholder protected page
@@ -82,6 +84,14 @@ search can be bookmarked or shared.
 The listings in `src/data/grants*.ts` are fictional sample data. Swap them
 for a real feed (API or CMS) by changing what `grants.ts` exports; the page
 and matching logic do not care where the array comes from.
+
+## Stories
+
+`/stories` shows one featured story in a dark panel with the grant and amount
+alongside, then a grid of shorter stories with initials avatars, and a
+"share your story" call to action. Content comes from `src/data/stories.ts`;
+the entries there are fictional composites and carry a visible sample banner.
+Set `featured: true` on the story you want at the top.
 
 ## Authentication
 
