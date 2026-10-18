@@ -2,16 +2,23 @@ import { AuthError, type AuthService, type User } from './types';
 
 /**
  * Browser-only mock backend. Accounts live in localStorage so you can
- * sign up, refresh, and sign back in. NOT for production: passwords are
- * only lightly obfuscated, never hashed properly.
+ * sign up, refresh, and sign back in.
+ *
+ * Passwords are never stored. Each account keeps a random salt and a
+ * PBKDF2-SHA256 hash (Web Crypto, 150k iterations), the same approach a
+ * real server would use. Still NOT for production: verification happens
+ * in the browser, so anyone with the device can bypass it. It only
+ * protects the plaintext password itself.
  */
 
-const USERS_KEY = 'civictext.mock.users';
+const USERS_KEY = 'civictext.mock.users.v2';
 const SESSION_KEY = 'civictext.mock.session';
-const LATENCY_MS = 600;
+const LATENCY_MS = 300;
+const PBKDF2_ITERATIONS = 150_000;
 
 interface StoredUser extends User {
-  secret: string;
+  salt: string;
+  hash: string;
 }
 
 const DEMO_ACCOUNT = {
@@ -22,7 +29,48 @@ const DEMO_ACCOUNT = {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const obfuscate = (value: string) => btoa(unescape(encodeURIComponent(value)));
+const toHex = (bytes: ArrayBuffer | Uint8Array) =>
+  Array.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+const fromHex = (hex: string) =>
+  new Uint8Array(hex.match(/.{2}/g)?.map((h) => parseInt(h, 16)) ?? []);
+
+function randomSalt(): string {
+  return toHex(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function hashPassword(password: string, saltHex: string): Promise<string> {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      hash: 'SHA-256',
+      salt: fromHex(saltHex),
+      iterations: PBKDF2_ITERATIONS,
+    },
+    keyMaterial,
+    256,
+  );
+  return toHex(bits);
+}
+
+/** Compares two hex strings without short-circuiting on the first mismatch. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 function readUsers(): StoredUser[] {
   try {
@@ -42,17 +90,26 @@ function writeUsers(users: StoredUser[]) {
   }
 }
 
-function ensureDemoAccount() {
-  const users = readUsers();
-  if (users.some((u) => u.email === DEMO_ACCOUNT.email)) return;
-  users.push({
-    id: 'demo',
-    name: DEMO_ACCOUNT.name,
-    email: DEMO_ACCOUNT.email,
-    createdAt: new Date(0).toISOString(),
-    secret: obfuscate(DEMO_ACCOUNT.password),
-  });
-  writeUsers(users);
+let demoSeeded: Promise<void> | null = null;
+
+function ensureDemoAccount(): Promise<void> {
+  if (!demoSeeded) {
+    demoSeeded = (async () => {
+      const users = readUsers();
+      if (users.some((u) => u.email === DEMO_ACCOUNT.email)) return;
+      const salt = randomSalt();
+      users.push({
+        id: 'demo',
+        name: DEMO_ACCOUNT.name,
+        email: DEMO_ACCOUNT.email,
+        createdAt: new Date(0).toISOString(),
+        salt,
+        hash: await hashPassword(DEMO_ACCOUNT.password, salt),
+      });
+      writeUsers(users);
+    })();
+  }
+  return demoSeeded;
 }
 
 function toPublic(stored: StoredUser): User {
@@ -73,7 +130,7 @@ function saveSession(user: User, remember: boolean) {
 
 export const mockAuthService: AuthService = {
   async getSession() {
-    ensureDemoAccount();
+    await ensureDemoAccount();
     try {
       const raw =
         sessionStorage.getItem(SESSION_KEY) ?? localStorage.getItem(SESSION_KEY);
@@ -84,12 +141,14 @@ export const mockAuthService: AuthService = {
   },
 
   async signIn({ email, password, remember = false }) {
-    await wait(LATENCY_MS);
-    ensureDemoAccount();
+    await Promise.all([wait(LATENCY_MS), ensureDemoAccount()]);
     const user = readUsers().find(
       (u) => u.email === email.trim().toLowerCase(),
     );
-    if (!user || user.secret !== obfuscate(password)) {
+    // Hash even when the user is missing so timing does not reveal
+    // which emails exist.
+    const candidate = await hashPassword(password, user?.salt ?? randomSalt());
+    if (!user || !constantTimeEqual(candidate, user.hash)) {
       throw new AuthError(
         'invalid-credentials',
         'That email and password combination did not match.',
@@ -101,8 +160,7 @@ export const mockAuthService: AuthService = {
   },
 
   async signUp({ name, email, password }) {
-    await wait(LATENCY_MS);
-    ensureDemoAccount();
+    await Promise.all([wait(LATENCY_MS), ensureDemoAccount()]);
     const users = readUsers();
     const normalized = email.trim().toLowerCase();
     if (users.some((u) => u.email === normalized)) {
@@ -111,12 +169,14 @@ export const mockAuthService: AuthService = {
         'An account with this email already exists. Try signing in instead.',
       );
     }
+    const salt = randomSalt();
     const user: StoredUser = {
       id: crypto.randomUUID(),
       name: name.trim(),
       email: normalized,
       createdAt: new Date().toISOString(),
-      secret: obfuscate(password),
+      salt,
+      hash: await hashPassword(password, salt),
     };
     users.push(user);
     writeUsers(users);
@@ -136,8 +196,7 @@ export const mockAuthService: AuthService = {
   },
 
   async requestPasswordReset() {
-    await wait(LATENCY_MS);
-    ensureDemoAccount();
+    await Promise.all([wait(LATENCY_MS), ensureDemoAccount()]);
     // Always succeed so the form cannot be used to probe which emails exist.
   },
 };
