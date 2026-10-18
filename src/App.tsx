@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import BotanicalDecor from './components/BotanicalDecor';
 import RequireAuth from './components/auth/RequireAuth';
 import Home from './pages/Home';
+import Grants from './pages/Grants';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
@@ -23,6 +24,7 @@ export default function App() {
           <main className={styles.main}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/grants" element={<Grants />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -25,8 +25,14 @@ src/
     AuthProvider.tsx             holds session state, exposes sign in/up/out
     useAuth.ts                   hook for components
     validation.ts                email/password/name checks + strength meter
+  data/
+    grantTypes.ts                Grant shape + option labels (audiences, focus areas...)
+    grants.ts                    SAMPLE grant listings (fictional), split in two parts
+  lib/
+    grantSearch.ts               pure filter/rank logic + URL param (de)serialisation
   pages/
     Home.tsx                     landing page (Hero + HowItWorks)
+    Grants.tsx                   grants database with background-based matching
     SignIn.tsx / SignUp.tsx      auth forms
     ForgotPassword.tsx           reset request + confirmation state
     Dashboard.tsx                placeholder protected page
@@ -35,6 +41,8 @@ src/
     auth/AuthLayout.tsx          split brand-panel + card layout for auth pages
     auth/TextField.tsx           labelled input with error, hint, show/hide
     auth/RequireAuth.tsx         route guard, redirects to /signin
+    grants/GrantFilters.tsx      "Your background" filter panel
+    grants/GrantCard.tsx         one grant result with match highlights
     Navbar.tsx                   sticky header, mobile hamburger menu
     Hero.tsx                     headline, CTAs, tag pills, photo + phone mockup
     PhoneMockup.tsx              iPhone-style SMS thread (messages passed as props)
@@ -50,6 +58,30 @@ src/
 - The hero photo is an Unsplash URL in `Hero.tsx`; swap it for a local image in
   `public/` for production.
 - Fonts (Fraunces + Inter) load from Google Fonts in `index.html`.
+
+## Grants Database
+
+`/grants` lets someone describe their background and see grants ranked by
+fit. Filters:
+
+- Who you are (multi-select): Black-owned, women-led, youth-serving, faith-based,
+  immigrant-led, veteran-owned, LGBTQ+-led, rural, first-time applicant,
+  formerly incarcerated founders.
+- What you are: business, nonprofit, informal group, individual.
+- Focus area (multi-select), state, grant size, keyword search, sort.
+
+Matching rules live in `src/lib/grantSearch.ts`. A grant must satisfy every
+hard filter (org type, state, size, keyword) and at least one selected
+audience and focus area. Results are then ranked by how many selected
+audiences and focus areas they match, with local grants ahead of nationwide
+ones. Expired deadlines are hidden automatically.
+
+Filters are stored in the URL (`/grants?who=black-owned,youth&state=GA`), so a
+search can be bookmarked or shared.
+
+The listings in `src/data/grants*.ts` are fictional sample data. Swap them
+for a real feed (API or CMS) by changing what `grants.ts` exports; the page
+and matching logic do not care where the array comes from.
 
 ## Authentication
 

@@ -31,7 +31,7 @@ export default function NotFound() {
             <Link to="/" className={styles.primary}>
               Back to Home
             </Link>
-            <a href="/#grants" className={styles.secondary}>
+            <a href="/grants" className={styles.secondary}>
               View Active Grants <span aria-hidden="true">&rarr;</span>
             </a>
           </div>

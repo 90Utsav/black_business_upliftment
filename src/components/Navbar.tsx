@@ -5,7 +5,7 @@ import styles from './Navbar.module.css';
 
 const links = [
   { label: 'How it Works', href: '/#how-it-works' },
-  { label: 'Grants Database', href: '/#grants' },
+  { label: 'Grants Database', href: '/grants' },
   { label: 'Stories', href: '/#stories' },
 ];
 
