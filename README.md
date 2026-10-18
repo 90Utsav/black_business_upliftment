@@ -64,8 +64,11 @@ with a demo login:
 demo@civictext.org / password123
 ```
 
-The mock is for development only. Passwords are stored lightly obfuscated,
-not hashed, and nothing leaves the browser.
+Passwords are never stored. The mock keeps a random per-account salt and a
+PBKDF2-SHA256 hash (Web Crypto, 150k iterations), the same scheme a real
+server would use. It is still development-only: verification runs in the
+browser, so it protects the plaintext password but cannot stop someone with
+the device from bypassing the check. Nothing leaves the browser.
 
 To go live, write a class or object that implements `AuthService` against
 Supabase, Firebase or your own API, and swap it in:
