@@ -31,8 +31,13 @@ src/
     stories.ts                   SAMPLE success stories (fictional composites)
   lib/
     grantSearch.ts               pure filter/rank logic + URL param (de)serialisation
+    intent.ts / intentKeywords.ts  plain-language message -> filters (who/what/where/amount)
+    conversation.ts              turns a message into bot replies (text + match cards)
+    draft.ts                     builds an application starter from message + grant
+    savedMatches.ts              per-user saved drafts in localStorage
   pages/
     Home.tsx                     landing page (Hero + HowItWorks)
+    Demo.tsx                     the core SMS-style flow: send text, get matches, get a draft
     Grants.tsx                   grants database with background-based matching
     Stories.tsx                  featured story + grid of community stories
     SignIn.tsx / SignUp.tsx      auth forms
@@ -45,6 +50,8 @@ src/
     auth/RequireAuth.tsx         route guard, redirects to /signin
     grants/GrantFilters.tsx      "Your background" filter panel
     grants/GrantCard.tsx         one grant result with match highlights
+    demo/ChatParts.tsx           bubbles, typing dots, match list, draft card
+    demo/IntentPanel.tsx         "What we understood" side panel
     Navbar.tsx                   sticky header, mobile hamburger menu
     Hero.tsx                     headline, CTAs, tag pills, photo + phone mockup
     PhoneMockup.tsx              iPhone-style SMS thread (messages passed as props)
@@ -60,6 +67,27 @@ src/
 - The hero photo is an Unsplash URL in `Hero.tsx`; swap it for a local image in
   `public/` for production.
 - Fonts (Fraunces + Inter) load from Google Fonts in `index.html`.
+
+## The demo (core flow)
+
+`/demo` simulates the SMS experience entirely in the browser:
+
+1. The user types a message in everyday language (or taps a suggestion).
+2. `parseIntent` reads out audiences (Black-owned, youth, faith-based...), focus
+   areas, organization type, city/state and a dollar amount using keyword
+   dictionaries in `intentKeywords.ts`. Nothing is sent anywhere.
+3. `buildReplies` runs the same `searchGrants` ranking as the database page and
+   answers with a short text plus up to three match cards. Vague messages get a
+   clarifying question; impossible combinations get the closest alternatives.
+4. "Get a draft" produces an application starter via `buildDraft`, which the
+   user can copy, or save to their dashboard when signed in.
+
+The side panel shows exactly which details were picked out of the message, with
+a link to the same filters on `/grants`, so matching is never a black box.
+Deep links work: `/demo?q=your message` starts the conversation immediately.
+
+To replace the keyword parser with a real model or backend, swap `parseIntent`
+in `conversation.ts`; everything downstream only needs a `Filters` object.
 
 ## Grants Database
 
