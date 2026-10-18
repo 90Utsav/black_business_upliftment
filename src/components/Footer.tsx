@@ -13,7 +13,7 @@ export default function Footer() {
         </p>
         <nav className={styles.links} aria-label="Footer">
           <a href="/grants">Grants</a>
-          <a href="/#stories">Stories</a>
+          <a href="/stories">Stories</a>
           <a href="mailto:hello@civictext.org">Contact</a>
         </nav>
       </div>
