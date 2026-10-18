@@ -62,7 +62,7 @@ const tags = [
 
 export default function Hero() {
   return (
-    <section className={styles.hero} id="demo">
+    <section className={styles.hero}>
       <div className={`container ${styles.grid}`}>
         <div className={styles.copy}>
           <h1 className={styles.title}>
@@ -76,7 +76,7 @@ export default function Hero() {
           </p>
 
           <div className={styles.actions}>
-            <a href="#how-it-works" className={styles.primary}>
+            <a href="/demo" className={styles.primary}>
               Try the Demo
             </a>
             <a href="/grants" className={styles.secondary}>

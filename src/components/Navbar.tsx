@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth';
 import styles from './Navbar.module.css';
 
 const links = [
+  { label: 'Try the Demo', href: '/demo' },
   { label: 'How it Works', href: '/#how-it-works' },
   { label: 'Grants Database', href: '/grants' },
   { label: 'Stories', href: '/stories' },
