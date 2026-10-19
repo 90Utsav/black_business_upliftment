@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Reveal from './Reveal';
 import styles from './HowItWorks.module.css';
 
 interface Step {
@@ -56,14 +57,16 @@ export default function HowItWorks() {
   return (
     <section className={styles.section} id="how-it-works">
       <div className="container">
-        <h2 className={styles.heading}>How It Works</h2>
+        <Reveal>
+          <h2 className={styles.heading}>How It Works</h2>
+        </Reveal>
         <ol className={styles.steps}>
-          {steps.map((s) => (
-            <li key={s.title} className={styles.step}>
+          {steps.map((s, i) => (
+            <Reveal as="li" key={s.title} className={styles.step} delay={i * 120}>
               <span className={styles.icon}>{s.icon}</span>
               <h3 className={styles.stepTitle}>{s.title}</h3>
               <p className={styles.stepBody}>{s.body}</p>
-            </li>
+            </Reveal>
           ))}
         </ol>
       </div>

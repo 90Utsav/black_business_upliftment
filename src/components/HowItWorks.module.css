@@ -65,3 +65,16 @@
     padding-top: 0;
   }
 }
+
+/* ---------- Motion ---------- */
+
+.icon {
+  transition:
+    transform 0.3s var(--ease-out),
+    color 0.3s ease;
+}
+
+.step:hover .icon {
+  transform: translateY(-4px);
+  color: var(--terracotta);
+}

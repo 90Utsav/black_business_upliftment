@@ -3,6 +3,7 @@ import AuthProvider from './auth/AuthProvider';
 import { mockAuthService } from './auth/mockAuthService';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import PageTransition from './components/PageTransition';
 import BotanicalDecor from './components/BotanicalDecor';
 import RequireAuth from './components/auth/RequireAuth';
 import Home from './pages/Home';
@@ -24,19 +25,21 @@ export default function App() {
           <BotanicalDecor />
           <Navbar />
           <main className={styles.main}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/grants" element={<Grants />} />
-              <Route path="/stories" element={<Stories />} />
-              <Route path="/demo" element={<Demo />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route element={<RequireAuth />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <PageTransition>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/grants" element={<Grants />} />
+                <Route path="/stories" element={<Stories />} />
+                <Route path="/demo" element={<Demo />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route element={<RequireAuth />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </PageTransition>
           </main>
           <Footer />
         </div>
