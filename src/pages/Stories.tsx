@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { stories, type Story } from '../data/stories';
+import Reveal from '../components/Reveal';
 import styles from './Stories.module.css';
 
 const toneClass: Record<Story['tone'], string> = {
@@ -45,7 +46,7 @@ export default function Stories() {
           </p>
         </header>
 
-        <article className={styles.featured}>
+        <Reveal as="article" className={styles.featured}>
           <div className={styles.featuredBody}>
             <p className={styles.featuredLabel}>Featured story</p>
             <blockquote className={styles.featuredQuote}>
@@ -54,7 +55,7 @@ export default function Stories() {
             {featured.body.map((para) => (
               <p key={para} className={styles.featuredPara}>
                 {para}
-              </p>
+                </p>
             ))}
             <div className={styles.person}>
               <Avatar story={featured} large />
@@ -75,31 +76,33 @@ export default function Stories() {
               Find grants like this <span aria-hidden="true">&rarr;</span>
             </Link>
           </aside>
-        </article>
+        </Reveal>
 
         <ul className={styles.grid}>
-          {rest.map((s) => (
-            <li key={s.id} className={styles.card}>
-              <blockquote className={styles.quote}>&ldquo;{s.quote}&rdquo;</blockquote>
-              <p className={styles.cardBody}>{s.body[0]}</p>
-              <div className={styles.person}>
-                <Avatar story={s} />
-                <div>
-                  <p className={styles.name}>{s.name}</p>
-                  <p className={styles.meta}>
-                    {s.org} &middot; {s.city}, {s.state}
-                  </p>
+          {rest.map((s, i) => (
+            <Reveal as="li" key={s.id} delay={(i % 3) * 90}>
+              <article className={styles.card}>
+                <blockquote className={styles.quote}>&ldquo;{s.quote}&rdquo;</blockquote>
+                <p className={styles.cardBody}>{s.body[0]}</p>
+                <div className={styles.person}>
+                  <Avatar story={s} />
+                  <div>
+                    <p className={styles.name}>{s.name}</p>
+                    <p className={styles.meta}>
+                      {s.org} &middot; {s.city}, {s.state}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <p className={styles.cardGrant}>
-                <span>{s.grant}</span>
-                <strong>{s.amount}</strong>
-              </p>
-            </li>
+                <p className={styles.cardGrant}>
+                  <span>{s.grant}</span>
+                  <strong>{s.amount}</strong>
+                </p>
+              </article>
+            </Reveal>
           ))}
         </ul>
 
-        <div className={styles.cta}>
+        <Reveal className={styles.cta}>
           <h2>Got funded through CivicText?</h2>
           <p>
             We would love to tell your story. Email us a few sentences and we
@@ -108,7 +111,7 @@ export default function Stories() {
           <a href="mailto:stories@civictext.org" className={styles.ctaBtn}>
             Share your story
           </a>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

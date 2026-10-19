@@ -1,3 +1,25 @@
+@keyframes hero-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .hero {
   padding-block: 48px 72px;
 }
@@ -23,6 +45,7 @@
   font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
+  animation: hero-up 0.7s var(--ease-out) both;
 }
 
 .lead {
@@ -30,6 +53,7 @@
   font-size: 1.05rem;
   color: var(--ink-soft);
   max-width: 46ch;
+  animation: hero-up 0.7s var(--ease-out) 0.12s both;
 }
 
 .actions {
@@ -38,6 +62,7 @@
   align-items: center;
   gap: 24px;
   flex-wrap: wrap;
+  animation: hero-up 0.7s var(--ease-out) 0.24s both;
 }
 
 .primary {
@@ -47,12 +72,20 @@
   border-radius: 10px;
   font-weight: 600;
   box-shadow: 0 10px 24px -12px rgba(201, 98, 59, 0.7);
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .primary:hover {
   background: var(--terracotta-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -12px rgba(201, 98, 59, 0.75);
+}
+
+.primary:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .secondary {
@@ -61,15 +94,20 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: color 0.2s ease;
 }
 
 .secondary span {
   display: inline-block;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s var(--ease-out);
+}
+
+.secondary:hover {
+  color: var(--terracotta);
 }
 
 .secondary:hover span {
-  transform: translateX(3px);
+  transform: translateX(4px);
 }
 
 .tags {
@@ -79,6 +117,7 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  animation: hero-up 0.7s var(--ease-out) 0.36s both;
 }
 
 .tag {
@@ -90,6 +129,14 @@
   font-size: 0.82rem;
   font-weight: 500;
   border: 1px solid transparent;
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s ease;
+}
+
+.tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -10px rgba(43, 29, 58, 0.35);
 }
 
 .tagIcon {
@@ -130,18 +177,30 @@
   aspect-ratio: 4 / 3;
   background: var(--cream-dark);
   box-shadow: 0 30px 60px -30px rgba(43, 29, 58, 0.35);
+  animation: hero-in 0.9s var(--ease-out) 0.2s both;
+  transition: box-shadow 0.4s ease;
+}
+
+.photoWrap:hover {
+  box-shadow: 0 40px 70px -30px rgba(43, 29, 58, 0.45);
 }
 
 .photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.8s var(--ease-out);
+}
+
+.photoWrap:hover .photo {
+  transform: scale(1.04);
 }
 
 .phone {
   position: absolute;
   right: 0;
   bottom: 0;
+  animation: hero-up 0.8s var(--ease-out) 0.5s both;
 }
 
 @media (max-width: 980px) {
