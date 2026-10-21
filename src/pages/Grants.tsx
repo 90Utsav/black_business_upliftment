@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import GrantCard from '../components/grants/GrantCard';
 import GrantFilters from '../components/grants/GrantFilters';
@@ -142,8 +142,8 @@ export default function Grants() {
               </div>
             ) : (
               <ul className={styles.list}>
-                {results.map((r) => (
-                  <li key={r.grant.id}>
+                {results.map((r, i) => (
+                  <li key={r.grant.id} style={{ '--i': Math.min(i, 8) } as CSSProperties}>
                     <GrantCard result={r} selectedAudiences={filters.audiences} />
                   </li>
                 ))}

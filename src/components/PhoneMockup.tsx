@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import styles from './PhoneMockup.module.css';
 
 export interface ChatMessage {
@@ -39,10 +40,11 @@ export default function PhoneMockup({ messages }: Props) {
         </div>
 
         <div className={styles.thread}>
-          {messages.map((m) => (
+          {messages.map((m, i) => (
             <p
               key={m.id}
               className={`${styles.bubble} ${m.from === 'user' ? styles.user : styles.bot}`}
+              style={{ '--i': i } as CSSProperties}
             >
               {m.text}
             </p>
