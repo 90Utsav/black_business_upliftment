@@ -23,6 +23,19 @@ cp .env.example .env               # Windows: copy .env.example .env
 Open `backend/.env` and fill in `LLM_API_KEY` (a Google Gemini key from
 aistudio.google.com, free). Never commit this file or paste the key in chat.
 The search itself does not need the key; only the chat/extraction steps do.
+For the Telegram webhook, also set `TELEGRAM_TOKEN` in the same file.
+
+## Run the API (Windows)
+
+From the repository root:
+
+```powershell
+cd backend
+python -m uvicorn main:app --reload
+```
+
+The API is then available at `http://127.0.0.1:8000`. Starting from the
+repository root without changing to `backend` will not find `main:app`.
 
 ## Build the database (the database file is not in git, everyone builds their own)
 
