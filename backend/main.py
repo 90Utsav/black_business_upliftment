@@ -113,7 +113,6 @@ async def receive_message(request: Request):
         for sub in active_subscribers:
             await sub.put(dashboard_update)
 
-        # Developer 1's AI worker takes over the heavy lifting in the background
         await run_in_threadpool(handle_message, chat_id, user_text)
 
     return {"status": "ok"}
