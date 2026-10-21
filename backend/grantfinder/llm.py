@@ -5,12 +5,15 @@ Swapping provider later = change this file only.
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+# Flash-lite models ignore `temperature` and warn on every call; we only ever pass 0.
+warnings.filterwarnings("ignore", message=".*fixed sampling defaults.*")
 
 
 def _key() -> str:
@@ -20,9 +23,23 @@ def _key() -> str:
     return key
 
 
-def get_llm(temperature: float = 0.0) -> ChatGoogleGenerativeAI:
-    return ChatGoogleGenerativeAI(model=os.environ.get("LLM_MODEL", "gemini-3.8-flash"),
-                                  google_api_key=_key(), temperature=temperature)
+# Free-tier quotas are per model and a model can be overloaded (503): if the main model fails,
+# the next one is tried. Override with LLM_MODEL / LLM_FALLBACK_MODELS (comma separated) in .env.
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_FALLBACKS = "gemini-3.1-flash-lite,gemini-3.5-flash"
+
+
+def llm_models() -> list[str]:
+    main = os.environ.get("LLM_MODEL", "").strip() or DEFAULT_MODEL
+    extra = os.environ.get("LLM_FALLBACK_MODELS", DEFAULT_FALLBACKS)
+    return list(dict.fromkeys([main, *[m.strip() for m in extra.split(",") if m.strip()]]))
+
+
+def get_llm(temperature: float = 0.0, model: str | None = None) -> ChatGoogleGenerativeAI:
+    # Short timeout + one retry: the client's default is to retry overload (503) errors with
+    # long backoff, which made one call take 10-30s. Fail fast and let the next model take over.
+    return ChatGoogleGenerativeAI(model=model or llm_models()[0], google_api_key=_key(),
+                                  temperature=temperature, timeout=20, max_retries=1)
 
 
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"  # ~130MB, runs locally, no key or quota

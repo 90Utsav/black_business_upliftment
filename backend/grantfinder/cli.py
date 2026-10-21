@@ -1,11 +1,11 @@
 """python -m grantfinder.cli ingest [--source grants.gov|seed|all] [--per-query N]
-   python -m grantfinder.cli stats | search <text>
+   python -m grantfinder.cli stats | search <text> | understand <text> | chat <text> [--chat-id ID]
 """
 from __future__ import annotations
 
 import argparse
 
-from . import db, retrieval
+from . import answer, db, retrieval, understand
 from .ingest import grants_gov, grants_gov_bulk, seed
 
 
@@ -18,10 +18,21 @@ def main() -> None:
     sub.add_parser("index", help="embed new/changed grants (needs LLM_API_KEY)")
     q = sub.add_parser("ask", help="semantic search over embedded grants")
     q.add_argument("text"); q.add_argument("-k", type=int, default=5); q.add_argument("--state")
+    u = sub.add_parser("understand", help="extract need/category/state/amount from a message (needs LLM_API_KEY)")
+    u.add_argument("text")
+    c = sub.add_parser("chat", help="full pipeline: message -> reply, exactly what the Telegram bot sends")
+    c.add_argument("text"); c.add_argument("--chat-id", default=None, help="save a waitlist entry for this id on no match")
     sub.add_parser("stats")
     s = sub.add_parser("search", help="naive keyword check of what is stored")
     s.add_argument("text")
     args = p.parse_args()
+
+    if args.cmd == "understand":
+        print(understand.understand(args.text).model_dump_json(indent=2))
+        return
+    if args.cmd == "chat":
+        print(answer.process_grant_request(args.text, chat_id=args.chat_id))
+        return
 
     conn = db.connect()
     if args.cmd == "ingest":

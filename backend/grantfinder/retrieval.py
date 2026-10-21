@@ -7,6 +7,7 @@ which is instant at this scale (~1.5k vectors).
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -74,3 +75,78 @@ def search(conn: sqlite3.Connection, query: str, k: int = 5, embeddings=None,
     sims = (m @ q) / (np.linalg.norm(m, axis=1) * np.linalg.norm(q) + 1e-9)
     top = np.argsort(-sims)[:k]
     return [(float(sims[i]), rows[i]) for i in top]
+
+
+# Words that say nothing about WHAT the user needs; they appear in almost every grant.
+_GENERIC = {"a", "an", "and", "or", "the", "of", "for", "to", "in", "on", "with", "my", "our", "i",
+            "grant", "grants", "fund", "funding", "money", "business", "businesses", "small", "company",
+            "owner", "new", "startup", "start", "program", "support", "need", "needs", "help", "owned", "led",
+            "open", "build", "expand", "based", "run", "sell", "get", "buy", "more", "some", "any", "very",
+            "really", "want", "like", "going", "looking", "starting", "started", "make", "making",
+            "have", "has", "that", "this", "from", "about", "out", "can", "all", "too", "just", "own",
+            "person", "people", "pay", "operation", "management", "service", "work", "working"}
+
+
+# Different spellings of the same group; the grant text and the user rarely use the same one.
+_SYNONYMS = {"woman": "women", "womens": "women", "latina": "latino", "latinx": "latino", "latine": "latino",
+             "hispanic": "latino", "aapi": "asian", "indigenous": "native", "disabled": "disability"}
+
+
+def _stem(w: str) -> str:
+    """Crude singulariser/stemmer: flowers->flower, nurseries->nursery, licensing/license->licens."""
+    w = _SYNONYMS.get(w, w)
+    if w.endswith("ies") and len(w) > 4:
+        w = w[:-3] + "y"
+    elif w.endswith("s") and not w.endswith("ss") and len(w) > 3:
+        w = w[:-1]
+    if w.endswith("ing") and len(w) > 5:
+        w = w[:-3]
+    elif w.endswith("er") and len(w) > 5:  # plumber/plumbing -> plumb, teacher/teaching -> teach
+        w = w[:-2]
+    elif w.endswith("e") and len(w) > 4:
+        w = w[:-1]
+    return _SYNONYMS.get(w, w)
+
+
+def terms(*texts: str) -> set[str]:
+    """Specific content words (lowercase, singularised, generic words removed)."""
+    words = re.findall(r"[a-z]+", " ".join(texts).lower())
+    return {_stem(w) for w in words if w not in _GENERIC and len(w) > 2}
+
+
+# Bulk federal grants say who may apply in free text. Keep ones open to businesses, individuals or
+# community groups; drop government/university-only and "Others." ones. Hand-written seed grants always stay.
+_ELIGIBLE = re.compile(r"business|individual|for[- ]?profit|non-?profit|unrestricted|anyone|organization", re.I)
+
+
+def eligible_for_public(r: sqlite3.Row) -> bool:
+    return r["source"] == "seed" or bool(_ELIGIBLE.search(r["eligibility"] or ""))
+
+
+def hybrid_search(conn: sqlite3.Connection, query: str, want: set[str], k: int = 3, pool: int = 40,
+                  weight: float = 0.4, local_bonus: float = 0.03, embeddings=None, state: str | None = None,
+                  extra: set[str] = frozenset()
+                  ) -> list[tuple[float, float, sqlite3.Row]]:
+    """Embedding search re-ranked by keyword overlap. Returns (score, overlap, row), best first.
+
+    `want` = specific words the USER said. A grant must share at least one,
+    because bge-small scores everything in a narrow 0.6-0.8 band, so cosine alone cannot
+    tell a real match from junk. overlap saturates at 2 shared words (1 if the user gave only one):
+    the model's paraphrase adds extra words ("florist", "retail") that must not dilute a real hit.
+    `extra` = the model's own category words: a small bonus only, never enough to open the gate.
+    """
+    out = []
+    for cos, r in search(conn, query, pool, embeddings, state):
+        have = terms(r["title"], r["description"], r["eligibility"], " ".join(json.loads(r["categories"])))
+        if not eligible_for_public(r):
+            continue
+        shared = len(want & have)
+        overlap = min(1.0, shared / min(2, len(want))) if want else 0.0
+        if overlap > 0:
+            # Tie-breakers, small on purpose: more shared words beats fewer (the cap above hides that),
+            # and a grant listing the user's own state edges out a nationwide one.
+            local = local_bonus if state and state in json.loads(r["states"]) else 0.0
+            bonus = 0.03 * min(shared, 6) + 0.02 * min(len(extra & have), 3)
+            out.append((cos + weight * overlap + bonus + local, overlap, r))
+    out.sort(key=lambda t: -t[0])
+    return out[:k]

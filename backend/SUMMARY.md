@@ -1,184 +1,205 @@
-# Backend summary: what we built and what comes next
+# Backend summary: what we built, what is broken, what comes next
 
-Written for: a teammate learning this project from scratch. Last updated 2026-10-18 at 12:57 PM.
+Written for: a teammate picking up this project. Last updated 2026-10-20 (two work sessions: Oct 18 and Oct 20).
 
 ## 1. The goal in one paragraph
 
-A small-business owner (say, a flower seller) texts a question like "grants for flower pots or
-nursery". Our system works out what they need, searches a database of grants collected from the
-internet, and replies with the best match, including the deadline and a link. If nothing matches,
-we remember the person, and the moment a fitting grant shows up later we notify them. For now the
-"text message" is a fake SMS-style chat on the website; real SMS (Twilio) is a teammate's job.
+A small-business owner (say, a flower seller) messages our **Telegram bot**: "grants for flower pots or
+nursery". The system works out what they need, searches a database of grants, and replies with the best
+match, including the amount, deadline and a link. If nothing matches, it saves the person so they can be
+told later when a fitting grant appears. We moved from a fake SMS-style web chat to Telegram because it is
+free (Twilio's trial blocks custom message bodies). Raunak owns the Telegram server, Utsav owns the website,
+the grant brain (this folder) is Bhabishya's.
 
-## 2. Key terms (read this first)
+## 2. Key terms
 
-- **Grant**: money given to a person or business that does not have to be paid back.
-- **Ingest**: pulling data from outside sources into our own database. "Ingesting Grants.gov" means
-  downloading its grants and saving them to our database.
-- **API**: a way for programs to talk to each other over the internet. Grants.gov has a public one
-  we can ask "give me grants about X". Different from a *website*, which is meant for humans.
-- **SQLite**: a database that is just one file on your computer (`backend/data/grants.db`). No server
-  to install.
-- **LLM (large language model)**: an AI like Gemini or Claude that reads and writes text. We use it
-  to understand the user's message and write the reply.
-- **Embedding / vector embedding**: a list of numbers (here 384 of them) that represents the
-  *meaning* of a piece of text. The text "horticulture supplies" and "plant nursery" get very
-  similar numbers even though they share no words. A *vector* is just such a list of numbers.
-- **Embedding model**: the small program that turns text into those numbers. Ours is
-  `BAAI/bge-small-en-v1.5`, runs on your own laptop, free, no key.
-- **Cosine similarity**: the math that scores how close two vectors are (1 = same meaning, 0 =
-  unrelated). Searching = score the question against every grant, return the highest.
-- **Semantic search**: searching by meaning (using embeddings) instead of by exact keywords.
-- **Retrieval**: the "find the relevant grants" step.
-- **RAG (Retrieval-Augmented Generation)**: the pattern our whole project follows. (1) *Retrieve*
-  relevant documents from our database, (2) hand them to an LLM along with the user's question,
-  (3) the LLM *generates* an answer using only those documents. Why: an LLM alone makes up grants
-  that do not exist and does not know today's deadlines. With RAG it answers from real data.
-- **LangChain**: a Python library with ready-made building blocks for LLM apps (calling models,
-  prompts, chaining steps).
-- **Prompt**: the instructions and text we send to the LLM.
-- **Idempotent**: safe to run repeatedly. Running ingest twice does not create duplicates.
-- **Webhook / Twilio**: Twilio is a service that turns SMS into web requests to our server. The
-  incoming text arrives at a URL (the webhook), we reply with text. Teammate Raunak owns this.
-- **Rate limit / quota**: the maximum calls an online service lets you make per minute or day.
+- **Grant**: money given to a person or business that does not have to be paid back. A *loan* is not a grant.
+- **Ingest**: pulling grants from outside sources into our own database.
+- **SQLite**: a database that is just one file (`backend/data/grants.db`). No server to install.
+- **LLM**: an AI like Gemini that reads and writes text. We use it only to *understand* the user's message.
+- **Embedding**: a list of numbers (384) that represents the *meaning* of a text. Similar meanings get similar
+  numbers. Ours comes from a small local model, `BAAI/bge-small-en-v1.5`: free, no key, no limits.
+- **Cosine similarity**: the score (0 to 1) of how close two embeddings are.
+- **RAG**: retrieve relevant documents first, then answer only from them, so the bot cannot invent grants.
+- **Hybrid search**: our search = embedding similarity plus a keyword-overlap check (see section 5).
+- **Audience**: the group an owner belongs to (Black-owned, Latino, women-led, veteran...).
+- **Webhook**: a URL on our server where Telegram POSTs every message sent to the bot (`/webhook`).
+- **Rate limit**: the maximum requests a free online service allows per minute.
+- **Fallback chain**: if the main LLM model errors or hits its limit, the next model is tried automatically.
 
 ## 3. How the system fits together
 
 ```
- user message ──► [3 Understand: LLM extracts need]   (not built yet)
-                          │
-                          ▼
- [1 Ingest] ──► SQLite ──► [2 Retrieval: embeddings + similarity search] ──► top grants
- (Grants.gov,   grants.db        (built)                                         │
-  seed file)                                                                     ▼
-                                              [4 Answer: LLM writes the reply, ≤2 SMS]
-                                                 │ no match? ──► SBIR fallback text +
-                                                 ▼               save in subscriptions table
-                                           reply to the user
+ Telegram user ──► Telegram servers ──► POST /webhook  (backend/main.py, Raunak's server)
+                                              │ process_grant_request(text, chat_id)
+                                              ▼
+   [understand.py] Gemini turns the text into: intent, need, category, business_type,
+                   audience[], state, amount, search_query
+        │ greeting / off-topic / too vague ──► fixed reply (no search)
+        ▼
+   [retrieval.py] embed search_query ─► compare with every open grant ─► re-rank by keyword overlap
+        │
+        ▼
+   [answer.py] reply built from the stored grant's own fields (title, amount, deadline, link)
+        │ no match ──► save the person in `subscriptions` + show the SBIR/STTR fallback text
+        ▼
+   send reply back through Telegram
 ```
 
-## 4. What we did, step by step
+The reply is **filled in from the database, not written by an LLM**, so it cannot invent a deadline or amount.
 
-### Step A: Looked at the existing repo
-The website (React + TypeScript, by Utsav) already had sample grants as fake data in `src/data`.
-We decided the Python backend lives in its own folder, `backend/`, and does not touch the website.
+## 4. What we did
 
-### Step B: Storage (phase 1)
-- `grantfinder/models.py`: defines a `Grant` (title, funder, description, amount, deadline,
-  eligibility, states, url...). Every source, however messy, gets converted into this one shape.
-- `grantfinder/db.py`: creates the SQLite tables:
-  - `grants`: all grants. Each has an id like `grants.gov:363998`. A fingerprint (`content_hash`)
-    detects when a grant has really changed.
-  - `embeddings`: one vector per grant.
-  - `subscriptions`: people who got no match, for the notify-later feature (table exists, logic
-    not written).
-- Upsert logic: new grants are inserted, changed ones updated, identical ones skipped. We fixed a
-  real bug here: the Grants.gov API returned eligibility lists in random order, making every grant
-  look "changed" each run. Sorting the list fixed it. Re-running is now safe.
+### Session 1 (Oct 18): storage, ingest, retrieval
+- **Storage** (`models.py`, `db.py`): SQLite tables `grants`, `embeddings`, `subscriptions`. Re-ingesting is safe
+  (new rows inserted, changed rows updated, identical rows skipped).
+- **Ingest**: the Grants.gov daily bulk extract gives about 10,000 federal grants (~1,450 open at a time, but
+  only ~240 open to small businesses or individuals, mostly research programs). Plus a hand-written seed file.
+- **Retrieval**: open and upcoming grants are embedded locally and searched by cosine similarity.
+- **Fallback text** (`fallback.py`): a paragraph about SBIR/STTR (sbir.gov), shown when nothing matches.
+- **Finding**: federal data has almost nothing for a flower seller. Real micro-grants live in state, city and
+  foundation sources.
 
-### Step C: Collecting grants (ingest)
-- **Grants.gov keyword API** (`ingest/grants_gov.py`): asks the public API for grants matching
-  keywords. Only got ~30 grants, so we replaced it as the main method.
-- **Grants.gov bulk extract** (`ingest/grants_gov_bulk.py`): Grants.gov publishes its entire
-  database daily as an 80 MB zip (a 320 MB XML file). We download it and stream through it.
-  Result: **10,160 grants** (868 open, 590 upcoming, 8,702 recently closed; 73,000 archived ones
-  are skipped). Takes ~10 seconds.
-- **Seed file** (`ingest/seed.py` + `data/seed_grants.json`): a hand-written list for grants no API
-  provides. "Seed" here just means "starting data we plant by hand". It contains:
-  one **fake sample** flower-pot grant (a placeholder for testing, delete it before the real demo)
-  and the real **SBA STEP** export grant (46 states).
-- **Key discovery**: only ~1,450 federal grants are open at any time, and just 239 are open to
-  small businesses or individuals, mostly research programs. Federal data has almost nothing for a
-  flower seller. Real small-business grants live in state/city/foundation sources.
-
-### Step D: Researched your website list
-- SBA page: SBA says it does not give grants for starting a business. Only STEP was useful (added).
-  SBIR/STTR is already on Grants.gov.
-- US Chamber and DC DMPED pages: readable, good future sources (need an LLM to read them).
-- Commerce.gov: blocked bots (403). TheGrantPortal: commercial, asks bots to wait 5s, terms may
-  forbid copying. We decided not to copy it wholesale without permission.
-
-### Step E: LLM key
-- skimming.ai turned out to be a video-summary product with no public model API, so its key could
-  not be used. We switched to a free **Google Gemini** key. It works (chat model
-  `gemini-3.8-flash`). The old `gemini-2.5-flash` was retired for new accounts.
-- `grantfinder/llm.py` is the single place that reads `backend/.env` (where the key lives, ignored
-  by git) and builds the clients. Changing provider later means editing only this file.
-- **Security note**: a key was pasted in chat earlier. Revoke the skimming key.
-
-### Step F: Retrieval (phase 2)
-- `grantfinder/retrieval.py`: turns each open/upcoming grant's text into a vector and stores it.
-  Search = embed the question, compare with every grant vector, return the top matches.
-- First tried Google's embeddings, but the free tier allows only 1,000 per day, which we hit at 850.
-  Switched to a **local** embedding model (fastembed, ~130 MB, no limits). All 1,460 open/upcoming
-  grants are now embedded.
-- Commands: `python -m grantfinder.cli ingest`, `index`, `ask "question"`, `stats`, `search`.
-
-### Step G: The SBIR fallback
-`grantfinder/fallback.py` holds a paragraph (and a 173-character SMS version) about America's Seed
-Fund (SBIR/STTR) at sbir.gov, shown to every user who gets no match. Award ceilings are from
-sbir.gov/about; the eligibility and timing statements are the program's standard rules and should
-be double-checked on the site.
-
-### Step H: Test results
-Search works when a good grant exists (the STEP query scored 0.74 and found the right grant). For
-bakery, food truck, flower pots and basketball camp it returned weak matches (scores ~0.55-0.62)
-because the database has no matching grants. Real matches score about 0.7; junk about 0.55-0.6.
-A cutoff near 0.65 can route junk to the no-match path. **Phase 2's exit check is not yet passed;
-it needs real small-business data.**
+### Session 2 (Oct 20): understanding, answering, Telegram
+1. **Merged Raunak's work.** His Telegram `backend/main.py` and Utsav's website changes came in through
+   `git merge origin/main`. The only conflict was `.gitignore`; both sets of lines were kept.
+2. **Fixed `requirements.txt`.** It was missing `fastapi`, `uvicorn`, `requests`, `fastembed` and `pydantic`.
+3. **Phase 3, understanding** (`understand.py`). One Gemini call with structured output returns the fields above.
+   Python then cleans it (state names become 2-letter codes, bad amounts become `None`). It also handles
+   greetings and off-topic or loan messages (`intent`). `audience` has 14 tags: the website's 10
+   (`black-owned`, `women-led`, `youth`, `faith-based`, `immigrant`, `veteran`, `lgbtq`, `rural`, `first-time`,
+   `formerly-incarcerated`) plus 4 we added (`latino`, `asian`, `native-american`, `disability`).
+4. **Speed: 19 s per call down to about 1 s.** The slowness was Google's `gemini-3.8-flash` returning "503 high
+   demand" while the client silently retried with long backoff. We switched to `gemini-3.5-flash-lite`, set a
+   20 s timeout and 1 retry, and added a **fallback chain** (`gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`,
+   then `gemini-3.5-flash`). Quotas are per model.
+5. **Free-tier limit: 15 requests per minute per model** (read from the actual 429 error). A burst of testing
+   hits it; one user typing normally does not.
+6. **Dummy database.** 30 seed grants (all titled "(sample)", links at `example.org`) covering food, beauty,
+   retail, trades, childcare, tutoring, wellness, creative work and identity-led groups (Black, Latino, Asian,
+   Native, disability, women, LGBTQ+, veteran, immigrant, formerly incarcerated, young). Quality of the data does not
+   matter for now; it exists so the pipeline can be shown working. Real grants are added later.
+7. **Phase 4, answering** (`answer.py`): `process_grant_request(user_text, chat_id=None) -> str`.
+   Greetings and `/start` are answered without calling the LLM. Off-topic gets "I only find grants". A request with
+   nothing specific ("I need money", "any grants in Ohio?") gets a follow-up question. Otherwise: search, reply
+   with the best grant plus up to 2 more. An LLM error returns a polite "try again" and never crashes.
+   No match saves one row in `subscriptions` (keyed by `chat_id`, no duplicates) and shows the SBIR text.
+8. **Matching quality.** A plain similarity cutoff does not work: the local model scores almost everything between
+   0.6 and 0.8, so "tattoo parlor" scored higher against an artist grant than the real flower grant did. We added:
+   a keyword-overlap check (a grant must share a specific word with what the user said), stemming (flowers/flower,
+   plumber/plumbing), spelling groups (Latina/Latinx/Latino, woman/women), a state-specific grant bonus, and a
+   cutoff (`MIN_SCORE = 0.93`).
+9. **Edge-case testing.** A 51-message harness (lasagna, braids, henna, tamales, trucking, deaf owner, Spanish,
+   loans, junk, prompt injection and more) went from **24/51 to 51/51** after fixes. On **18 fresh messages we had
+   not tuned on, it scored 13/18**, which is the honest number.
+10. **Telegram wiring** (`backend/main.py`). The hardcoded bot token is gone (it now comes from `TELEGRAM_TOKEN` in
+    `.env`). `/webhook` now calls `process_grant_request(text, chat_id)` and sends the result back. The lookup runs
+    in a worker thread, each Telegram `update_id` is answered once, replies are cut to Telegram's 4,096-character
+    limit, and a crash still gives the user a reply. Tested with a dummy token against the real server; real
+    delivery has **not** been tested.
 
 ## 5. Where things are
 
 ```
 backend/
-  SUMMARY.md            this file
-  README.md             setup steps for another laptop
-  requirements.txt      Python packages
-  .env                  your secrets (NOT in git)    .env.example  the template (in git)
+  SUMMARY.md             this file
+  main.py                FastAPI Telegram webhook (Raunak's file, now calling our function)
+  README.md              setup steps
+  requirements.txt       Python packages
+  .env                   secrets (NOT in git)        .env.example   template (in git)
   data/
-    seed_grants.json    hand-written grants (in git)
-    grants.db           the database (NOT in git, rebuilt by ingest + index)
-    cache/              the downloaded Grants.gov zip (NOT in git)
+    seed_grants.json     30 hand-written dummy grants (in git)
+    grants.db            the database (NOT in git: run ingest + index to build it)
   grantfinder/
-    models.py db.py config.py llm.py retrieval.py fallback.py cli.py
-    ingest/  grants_gov.py  grants_gov_bulk.py  seed.py
-  tests/test_ingest.py  3 passing tests
-docs/RAG_PLAN.md        the 7-phase plan with exit checks
+    understand.py        message -> structured request (Gemini)
+    answer.py            process_grant_request: the whole reply logic
+    retrieval.py         embeddings, search, keyword re-ranking
+    llm.py               the only file that builds LLM clients (model list + fallbacks)
+    fallback.py          SBIR/STTR no-match text
+    cli.py db.py models.py config.py ingest/
+  tests/                 44 pytest tests: 30 run offline, 14 call the real LLM (need a key)
+    eval/cases.py        69 hand-written messages with acceptable outcomes (TUNED 51, HOLDOUT 18)
+    eval/run.py          runs them through the real pipeline and prints misses (not part of pytest)
+docs/RAG_PLAN.md         the original plan (still describes SMS; see section 8)
 ```
 
-## 6. What to do next, in order
+## 6. How to run and test
 
-Each step has a "done when" check. Do not start the next one until it passes.
+From `backend/` with `source .venv/bin/activate`:
 
-1. **Save the work in git.** Commit and push the `Bhabishya` branch. Done when teammates can see
-   `backend/` on GitHub (and no `.env` or `.db` file is in it).
-2. **Revoke the exposed skimming key** and keep the Gemini key only in `backend/.env`.
-3. **Delete or label the fake placeholder grant** in `seed_grants.json` before any demo.
-4. **Add real small-business grants (the biggest gap).** Build a generic "read a web page, let the
-   Gemini LLM extract each grant" ingestor, plus a `sources.yaml` listing pages. Start with the US
-   Chamber list, DC DMPED, then state and city small-business portals. Hand-add good ones too.
-   Done when: the database holds a few hundred real small-business grants and the flower/bakery/
-   food-truck test queries return a sensible grant in the top 3.
-5. **Finish phase 2.** Add a similarity cutoff (~0.65) and a state filter. Re-run the test
-   queries. Done when ~10 test questions return the right grant or correctly return nothing.
-6. **Phase 3, Understanding.** A prompt that turns "I run a youth basketball camp and need money
-   for jerseys" into `{category, need, amount, state, business type}`. Done when it passes unit
-   tests on ~10 sample messages.
-7. **Phase 4, Answering.** `process_grant_request(user_text) -> str`: understand, retrieve, have
-   the LLM write a reply of at most 2 SMS (grant name, deadline, link, a first sentence for the
-   application). It may only use facts from the stored grant. No match gives the SBIR fallback.
-   Done when replies fit the length cap and never invent grants or dates.
-8. **Phase 5, Waitlist and notify.** On no match, save the user to `subscriptions`. After each
-   ingest, check new grants against waiting users and mark them notified. Done when a test user is
-   matched after a matching grant is added.
-9. **Phase 6, Chat interface.** A web endpoint (FastAPI `POST /api/chat`) and an SMS-styled chat
-   page. Done when you ask in the browser and get a reply. Raunak's Twilio webhook will call the
-   same function.
-10. **Phase 7, Merge.** Plug the chat into Utsav's site, wire Twilio, and demo end to end.
-11. **Ongoing.** Re-run `ingest` and `index` daily so new grants appear; keep the pitch story
-    honest about data coverage.
+```bash
+python -m grantfinder.cli ingest          # load grants (seed + Grants.gov), then:
+python -m grantfinder.cli index           # embed new grants (needed after every ingest)
+python -m grantfinder.cli chat "I sell flowers and need money for flower pots"   # full pipeline, no Telegram
+python -m grantfinder.cli understand "..."                                       # only the understanding step
+python -m pytest tests -q -k "not live"   # offline tests (30)
+python -m pytest tests -q                 # all tests, including real LLM calls
+python tests/eval/run.py all              # the 69-message evaluation (real LLM, ~5 min, paced for the rate limit)
+uvicorn main:app --port 8000              # the Telegram server (needs TELEGRAM_TOKEN in .env)
+```
 
-## 7. Questions we have not decided yet
-- Who hosts the running backend (your laptop for the demo, or a free cloud service)?
-- Do we have permission to use TheGrantPortal's listings (API, login, or written OK)?
-- Real Twilio (needs a paid upgrade) or the simulated SMS chat only?
+Needed in `backend/.env`: `LLM_API_KEY` (Gemini), `TELEGRAM_TOKEN`. Optional: `LLM_MODEL`, `LLM_FALLBACK_MODELS`.
+`grants.db` is not in git, so a new machine must run `ingest` and `index` before the bot has anything to search.
+Wait a minute between large test batches: the free LLM allows 15 requests per minute per model.
+
+## 7. Problems right now
+
+1. **Latest matching changes are unverified.** After the last full test run we changed matching so that only the
+   user's own words open the match gate, federal grants open only to governments or universities are skipped, state
+   names do not count as keywords, and "any grants in Ohio?" asks a follow-up. They pass the 30 offline tests but were
+   never re-run against the 51 + 18 real messages.
+2. **Federal grants add noise.** Long federal descriptions share words by accident. The fresh set matched a candle
+   maker to a U.S. Embassy grant, a piano teacher to an education-research grant, and a lash studio to a university
+   program. The fixes in problem 1 target this.
+3. **Eligibility is not enforced.** Grants only carry eligibility as free text. A "Black-owned businesses" grant can
+   be shown to someone who did not say they are Black-owned, and an immigrant grant to a non-immigrant.
+4. **The 0.93 cutoff is tuned to the dummy data.** Re-check it after adding real grants.
+5. **Telegram has not been tested for real.** Only with a dummy token. Nobody on the AI side has a Telegram account yet.
+6. **The waitlist promise is false right now.** The no-match reply says "I've saved your request and will message you
+   here if a matching grant is added", but phase 5 (the notifying) is not built.
+7. **Free-tier limit: 15 requests per minute per model.** About 45 per minute across the three-model fallback chain.
+   Fine for one user, a risk for a demo with several people at once.
+8. **Security.** The old Telegram bot token was committed to git by mistake: it must be revoked in @BotFather
+   (`/revoke`) and replaced. The old skimming.ai key (from session 1) should also be revoked.
+9. **The 18 "fresh" messages are no longer fresh.** We used them to find bugs, so they now count as tuned-on. New unseen
+   messages are needed to measure real quality (the harness is in `tests/eval/`, see section 6).
+10. **Four audience tags (`latino`, `asian`, `native-american`, `disability`) are not website filters.** Utsav's site
+    only has the original 10.
+
+## 8. Next steps, in order
+
+1. **Test the Telegram bot for real.** Raunak (or anyone with Telegram) merges this branch, adds `TELEGRAM_TOKEN` and
+   `LLM_API_KEY` to his `.env`, runs `ingest` and `index`, starts the server, and messages the bot. Revoke the old
+   token first.
+2. **Re-run the evaluation** (`python tests/eval/run.py all`) and see whether the latest matching changes helped or
+   broke anything. Then add new unseen messages to `tests/eval/cases.py`.
+3. **Audience rule (decided, not built).** If the user states a group ("Black-owned", "Latina"), return grants for that
+   group first; if nothing exists for it, fall back to general grants. If the user states no group, return only
+   general grants, not ones restricted to a group. The simplest way to know a grant's group is to scan its title and
+   eligibility text for group words and tag it automatically.
+4. **Select-criteria buttons on Telegram** (for example "Who is this for? [Black-owned] [Latino] [Women] [None]").
+   Needs the webhook to also handle button taps.
+5. **Phase 5, waitlist and notify.** After each `ingest`, match new grants against saved users and send them a Telegram
+   message (the saved `chat_id` is the address). Until then, change the no-match wording so it does not promise this.
+6. **Real data**, when the demo flow works: a generic "read a web page, let Gemini extract each grant" ingestor with a
+   `sources.yaml` (US Chamber list, DC DMPED, state and city portals), then re-check the 0.93 cutoff and delete the sample grants.
+7. **Update `docs/RAG_PLAN.md` and `README.md`**, which still describe SMS and the old plan.
+8. **Merge and demo** with Utsav's website (a QR code that opens the bot).
+
+## 9. Skipped or changed from the original plan
+
+- **SMS-style web chat page and `POST /api/chat` (old phase 6): dropped.** Telegram replaced it. The function stays
+  transport-agnostic, so a website chat can still call `process_grant_request`.
+- **Twilio / real SMS: dropped** (paid, trial limits). Telegram is free.
+- **Real small-business data (old step 4): postponed on purpose.** We decided a dummy database is fine for now.
+- **Phase 2's original exit check** (right grant in the top 3 for ten real queries) was replaced by the 51/18-message
+  evaluation on dummy data, because real data does not exist yet.
+- **Phase 3's "unit tests on ~10 samples"**: done (14 live and 5 offline tests).
+- **LLM-written replies, a second LLM re-ranking call, and conversation memory: skipped.** Replies come from templates
+  (cannot invent facts), and each message is handled on its own.
+- **Loan vs grant handling: partial.** Loans get "I only find grants"; there is no special loan guidance.
+- **Caching repeated questions: skipped.** It would help with the rate limit.
+- **Deleting the original fake flower-pot grant (old step 3): not done.** It is one of the 30 "(sample)" grants and
+  should go before a real demo.
+- **TheGrantPortal permission and hosting decision: still undecided.** Who hosts the running server (a laptop with
+  ngrok for the demo, or a free cloud service) is still open.
