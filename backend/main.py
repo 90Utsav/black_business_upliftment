@@ -1,10 +1,58 @@
-from fastapi import FastAPI, Request
+import logging
+import os
+from collections import deque
+from contextlib import asynccontextmanager
+
 import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 
-app = FastAPI()
+load_dotenv()  # reads backend/.env; the bot token lives there, never in git
 
-TELEGRAM_TOKEN = "8597602595:AAH8ujxBMrTtfJL4M-BuoVkxb4kkUZ5_0Uw"
-TELEGRAM_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+from grantfinder.answer import process_grant_request  # noqa: E402  (after load_dotenv: it reads the LLM key)
+
+log = logging.getLogger("telegram")
+
+TELEGRAM_MAX_CHARS = 4096  # Telegram rejects longer messages
+_seen_updates: deque = deque(maxlen=500)  # Telegram re-sends an update if we answer slowly; reply only once
+
+
+def _send_url() -> str:
+    token = os.environ.get("TELEGRAM_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("TELEGRAM_TOKEN is empty. Put the bot token in backend/.env")
+    return f"https://api.telegram.org/bot{token}/sendMessage"
+
+
+def send_message(chat_id, text: str) -> None:
+    # Send reply back to Telegram's servers so it shows up on the user's phone
+    payload = {"chat_id": chat_id, "text": text[:TELEGRAM_MAX_CHARS], "disable_web_page_preview": True}
+    resp = requests.post(_send_url(), json=payload, timeout=15)
+    if not resp.ok:
+        log.error("sendMessage failed: %s %s", resp.status_code, resp.text[:200])
+
+
+def handle_message(chat_id, user_text: str) -> None:
+    """Runs in a worker thread: the grant lookup blocks (LLM call + search), so it must not run on the event loop."""
+    try:
+        reply_text = process_grant_request(user_text, chat_id)
+    except Exception:
+        log.exception("process_grant_request crashed")
+        reply_text = "Sorry, something went wrong on my side. Please try again in a minute."
+    send_message(chat_id, reply_text)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _send_url()  # fail at startup, not on the first user's message, if the token is missing
+    from grantfinder.llm import get_embeddings
+    await run_in_threadpool(get_embeddings)  # loads the local embedding model now so the first message is not slow
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 @app.get("/")
 def home():
@@ -14,18 +62,18 @@ def home():
 @app.post("/webhook")
 async def receive_message(request: Request):
     data = await request.json() # translate package data into python
-    print("\n--- NEW MESSAGE RECEIVED ---")
-    print(data)
-    
+
+    update_id = data.get("update_id")
+    if update_id is not None:
+        if update_id in _seen_updates:
+            return {"status": "ok"}
+        _seen_updates.append(update_id)
+
     # Check if the package actually contains a text message
-    if "message" in data and "text" in data["message"]:
-        chat_id = data["message"]["chat"]["id"]  # Grab the unique ID 
-        user_text = data["message"]["text"] # Grab the actual text the user typed
-        
-        reply_text = f"Hi bbg"
-        
-        # Send reply back to Telegram's servers so it shows up on the user's phone
-        payload = {"chat_id": chat_id, "text": reply_text} 
-        requests.post(TELEGRAM_URL, json=payload)
-    
+    message = data.get("message") or {}
+    if "text" in message:
+        chat_id = message["chat"]["id"]  # Grab the unique ID
+        user_text = message["text"]  # Grab the actual text the user typed
+        await run_in_threadpool(handle_message, chat_id, user_text)
+
     return {"status": "ok"}
