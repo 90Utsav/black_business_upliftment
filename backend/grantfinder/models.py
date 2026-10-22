@@ -41,6 +41,6 @@ class Grant:
 
     @property
     def search_text(self) -> str:
-        """The text that gets embedded in phase 2."""
+        """Grant text used for semantic indexing."""
         return " . ".join(p for p in [self.title, self.funder, self.description,
                                       self.eligibility, " ".join(self.categories)] if p)

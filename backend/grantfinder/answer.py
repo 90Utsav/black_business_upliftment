@@ -1,4 +1,4 @@
-"""Phase 4: message in, reply text out. Transport-agnostic (Telegram, web chat, SMS all call this).
+"""Transport-independent grant request processing and response formatting.
 
     process_grant_request("I sell flowers and need pots", chat_id="12345") -> str
 
@@ -56,10 +56,13 @@ def format_grant(r: sqlite3.Row) -> str:
     deadline = r["deadline"] or "rolling / no set deadline"
     if r["status"] == "forecasted":
         deadline += " (not open yet)"
+    desc = _first_sentence(r["description"])
+    if desc.rstrip(".") == r["title"]:  # one-line listings repeat their title as the description
+        desc = ""
+    who = _first_sentence(r["eligibility"]) if len(r["eligibility"]) > 15 else ""
     lines = [r["title"], r["funder"] or None, f"Amount: {_money(r['amount_min'], r['amount_max'])}",
-             f"Deadline: {deadline}", _first_sentence(r["description"]) or None,
-             f"Who can apply: {_first_sentence(r['eligibility'])}" if len(r["eligibility"]) > 15 else None,
-             f"Apply: {r['url']}"]
+             f"Deadline: {deadline}", desc or None, f"Who can apply: {who}" if who else None,
+             f"Apply: {r['url']}" if who else f"View more details: {r['url']}"]
     return "\n".join(l for l in lines if l)
 
 

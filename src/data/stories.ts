@@ -19,8 +19,7 @@ export interface Story {
 
 /**
  * SAMPLE DATA. The people, organizations and grants below are fictional
- * composites written to demonstrate the page. Replace with real, consented
- * stories before launch.
+ * composites used to demonstrate the stories page.
  */
 export const stories: Story[] = [
   {

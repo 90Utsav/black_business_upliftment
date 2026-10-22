@@ -36,9 +36,7 @@ export class AuthError extends Error {
 }
 
 /**
- * Everything the UI needs from an auth backend.
- * Implement this against Supabase, Firebase or your own API and
- * pass it to <AuthProvider service={...}> without touching the pages.
+ * Authentication contract shared by account pages and session providers.
  */
 export interface AuthService {
   getSession(): Promise<User | null>;

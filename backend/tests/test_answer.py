@@ -86,6 +86,22 @@ def test_match_reply_uses_stored_facts(conn):
     assert "Expired Flower Grant" not in reply  # past deadline is never offered
 
 
+def test_grant_without_eligibility_shows_view_more_details(conn):
+    db.upsert_grants(conn, [Grant(source="listing", external_id="l1", title="Mural Artist Fund", url="https://x.org/l1",
+                                  funder="Arts Fund", description="Mural Artist Fund.", amount_max=3000)])
+    retrieval.index_grants(conn, embeddings=FakeEmbeddings())
+    reply = ask(conn, "mural artist", Request(need="mural artist", search_query="mural artist grants"))
+    assert "View more details: https://x.org/l1" in reply
+    assert "Who can apply" not in reply and "Apply:" not in reply and "third-party" not in reply
+    assert reply.count("Mural Artist Fund") == 1  # the repeated title line is dropped
+
+
+def test_grant_with_eligibility_keeps_apply_link(conn):
+    reply = ask(conn, "flowers", Request(need="flower pots", category="nursery", search_query="flower pots nursery"))
+    assert "Who can apply: Small nurseries" in reply and "Apply: https://x.org/pots" in reply
+    assert "View more details" not in reply
+
+
 def test_state_filter_hides_other_states(conn):
     req = Request(need="bakery oven", search_query="bakery oven grants", state="TX")
     assert "Bakery Oven Grant" not in ask(conn, "bakery in Texas", req)
