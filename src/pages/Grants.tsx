@@ -50,16 +50,14 @@ export default function Grants() {
           <p className={styles.kicker}>Grants Database</p>
           <h1 className={styles.title}>Find funding built for people like you.</h1>
           <p className={styles.lead}>
-            Explore this sample catalog with the site&rsquo;s local filters.
-            For grant search using the backend catalog, start a conversation
-            with CivicText on Telegram.
+            Explore sample grant listings with filters for your organization and work.
           </p>
           <p className={styles.sample}>
-            These fictional sample listings are separate from the live
-            Telegram backend and are not application recommendations.
+            These examples are for demonstration only. Verify real opportunities
+            and application details with each funder.
           </p>
           <p className={styles.sample}>
-            <Link to="/demo">Find grants with the Telegram bot &rarr;</Link>
+            Looking for a personalized search? <Link to="/demo">Ask CivicText on Telegram &rarr;</Link>
           </p>
         </header>
 
