@@ -113,3 +113,9 @@ This is a single-page app, so the host must serve `index.html` for every path
 or the 404 page will never render on a direct visit. Netlify and Vercel do this
 automatically for Vite projects. For GitHub Pages, copy `dist/index.html` to
 `dist/404.html` after building.
+
+The root [vercel.json](./vercel.json) configures Vercel as a multi-service
+project: the Vite app is served by the `app` service, `/api/*` requests are
+forwarded to the FastAPI `backend` service, and all other paths go to the app.
+Configure the backend's `TELEGRAM_TOKEN` and LLM settings as Vercel environment
+variables. Set `VITE_TELEGRAM_BOT_USERNAME` for the website's Telegram links.
