@@ -1,4 +1,4 @@
-"""Phase 2: embed grants and find the closest ones to a query.
+"""Embed grant records and retrieve matches for a query.
 
 Only open/forecasted grants are embedded (closed ones are ~85% of rows and are not
 what a user can apply to today). Vectors live in SQLite; cosine search is numpy,
@@ -115,12 +115,12 @@ def terms(*texts: str) -> set[str]:
 
 
 # Bulk federal grants say who may apply in free text. Keep ones open to businesses, individuals or
-# community groups; drop government/university-only and "Others." ones. Hand-written seed grants always stay.
+# community groups; drop government/university-only and "Others." ones. Hand-written seed and listing grants always stay.
 _ELIGIBLE = re.compile(r"business|individual|for[- ]?profit|non-?profit|unrestricted|anyone|organization", re.I)
 
 
 def eligible_for_public(r: sqlite3.Row) -> bool:
-    return r["source"] == "seed" or bool(_ELIGIBLE.search(r["eligibility"] or ""))
+    return r["source"] in ("seed", "listing") or bool(_ELIGIBLE.search(r["eligibility"] or ""))
 
 
 def hybrid_search(conn: sqlite3.Connection, query: str, want: set[str], k: int = 3, pool: int = 40,

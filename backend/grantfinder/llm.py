@@ -1,6 +1,6 @@
 """Single place that builds the LLM + embeddings clients from backend/.env.
 
-Swapping provider later = change this file only.
+Centralizes provider configuration and model fallback behavior.
 """
 from __future__ import annotations
 

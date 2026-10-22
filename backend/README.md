@@ -1,62 +1,82 @@
-# Grant finder backend (Python)
+# CivicText grant service
 
-Stores grants, embeds them locally, and searches them by meaning.
-Plan and phases: [../docs/RAG_PLAN.md](../docs/RAG_PLAN.md).
+Python service for grant ingestion, semantic retrieval, and Telegram responses. Grant records and embedding vectors are stored in SQLite; request understanding uses Gemini through LangChain.
 
-## Setup on a new laptop (macOS / Linux)
+## Setup
 
-Needs Python 3.10+ (check with `python3 --version`) and about 1 GB of free disk.
+Requires Python 3.10+. Run from the repository root:
 
 ```bash
-git clone https://github.com/90Utsav/black_business_upliftment.git
-cd black_business_upliftment
-git checkout Bhabishya            # or whichever branch has the backend/ folder
 cd backend
-
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env               # Windows: copy .env.example .env
+cp .env.example .env
 ```
 
-Open `backend/.env` and fill in `LLM_API_KEY` (a Google Gemini key from
-aistudio.google.com, free). Never commit this file or paste the key in chat.
-The search itself does not need the key; only the chat/extraction steps do.
-For the Telegram webhook, also set `TELEGRAM_TOKEN` in the same file.
+On Windows, activate the environment with `.venv\Scripts\activate` and copy the environment template with `copy .env.example .env`.
 
-## Run the API (Windows)
+## Configuration
 
-From the repository root:
+Set environment values in `backend/.env`, which is excluded from version control.
 
-```powershell
-cd backend
-python -m uvicorn main:app --reload
-```
+| Variable | Purpose |
+| --- | --- |
+| `LLM_API_KEY` | Gemini API key for request understanding and chat |
+| `LLM_MODEL` | Optional primary model override |
+| `LLM_FALLBACK_MODELS` | Optional comma-separated fallback models |
+| `LLM_BASE_URL` | Optional provider base URL override |
+| `TELEGRAM_TOKEN` | Bot token required for API startup and Telegram delivery |
 
-The API is then available at `http://127.0.0.1:8000`. Starting from the
-repository root without changing to `backend` will not find `main:app`.
+Local embeddings and semantic search do not require an LLM API key. Initial indexing downloads the embedding model and can take several minutes on CPU.
 
-## Build the database (the database file is not in git, everyone builds their own)
+## Grant database
+
+Run from `backend/`:
 
 ```bash
-python -m grantfinder.cli ingest --source all   # downloads ~80MB from Grants.gov, ~10s
-python -m grantfinder.cli index                 # embeds grants locally; first run
-                                                # downloads a ~130MB model, then ~10-15 min on CPU
+python -m grantfinder.cli ingest --source seed
+python -m grantfinder.cli index
 python -m grantfinder.cli stats
 python -m grantfinder.cli ask "flower pots and nursery plants"
 ```
 
-Run `ingest` then `index` again any time to pick up new grants (only new or changed
-grants are processed).
-
-## Tests
+`--source seed` loads curated records and available third-party listings. `--source all` also downloads the Grants.gov bulk extract. The generated database, model cache, and downloaded extracts are excluded from version control. Repeating ingestion and indexing processes new or changed records.
 
 ```bash
-python -m pytest -q
+python -m grantfinder.cli understand "I run a bakery in Georgia"
+python -m grantfinder.cli chat "I run a bakery in Georgia and need equipment"
 ```
 
-## Troubleshooting
-- `command not found: python3`: install Python from python.org.
-- `pip install` fails on a very new Python: use Python 3.11 or 3.12.
-- First `index` seems stuck: it is downloading the model, then embedding on CPU. Let it run.
+The `understand` and `chat` commands require `LLM_API_KEY`.
+
+## API
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+The service runs at `http://127.0.0.1:8000`. Startup validates the Telegram token and loads the embedding model.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /` | Service response |
+| `POST /webhook` | Telegram text updates |
+| `GET /stream` | Server-sent events for incoming requests |
+
+Telegram delivery requires a publicly reachable HTTPS webhook registered with the bot. Grant processing runs in a worker thread to avoid blocking the event loop.
+
+## Validation
+
+```bash
+python -m pytest tests -q -k "not live"
+```
+
+Live tests require an API key and make provider requests:
+
+```bash
+python -m pytest tests -q
+python tests/eval/run.py all
+```
+
+See [system architecture](../docs/ARCHITECTURE.md) for component responsibilities, data sources, and current limitations.

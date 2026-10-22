@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS grants (
 CREATE INDEX IF NOT EXISTS idx_grants_status ON grants(status);
 CREATE INDEX IF NOT EXISTS idx_grants_first_seen ON grants(first_seen);
 
--- Vector index, kept in sync with grants by content_hash (phase 2).
+-- Vector index, kept in sync with grants by content_hash.
 CREATE TABLE IF NOT EXISTS embeddings (
     grant_id     TEXT PRIMARY KEY REFERENCES grants(id) ON DELETE CASCADE,
     content_hash TEXT NOT NULL,              -- grant hash this vector was built from
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS embeddings (
     vector       BLOB NOT NULL               -- float32 array
 );
 
--- Users whose request found no match; phase 5 notifies them when one appears.
+-- Subscriptions recorded for requests without a matching grant.
 CREATE TABLE IF NOT EXISTS subscriptions (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     contact     TEXT NOT NULL,               -- phone number or chat session id

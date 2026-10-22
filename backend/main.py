@@ -22,7 +22,6 @@ log = logging.getLogger("telegram")
 TELEGRAM_MAX_CHARS = 4096  # Telegram rejects longer messages
 _seen_updates: deque = deque(maxlen=500)  # Telegram re-sends an update if we answer slowly; reply only once
 
-# --- YOUR RADIO STATION STATE ---
 active_subscribers: list[asyncio.Queue] = []
 
 def _send_url() -> str:
@@ -32,7 +31,6 @@ def _send_url() -> str:
     return f"https://api.telegram.org/bot{token}/sendMessage"
 
 def send_message(chat_id, text: str) -> None:
-    # Send reply back to Telegram's servers so it shows up on the user's phone
     payload = {"chat_id": chat_id, "text": text[:TELEGRAM_MAX_CHARS], "disable_web_page_preview": True}
     resp = requests.post(_send_url(), json=payload, timeout=15)
     if not resp.ok:
@@ -56,7 +54,6 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# --- YOUR BOUNCER (CORS) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -69,7 +66,6 @@ app.add_middleware(
 def home():
     return {"message": "My server is awake!"}
 
-# --- YOUR RADIO TOWER (SSE Endpoint) ---
 @app.get("/stream")
 async def stream_dashboard():
     client_queue = asyncio.Queue()
@@ -86,10 +82,9 @@ async def stream_dashboard():
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-# Telegram drops off incoming messages here
 @app.post("/webhook")
 async def receive_message(request: Request):
-    data = await request.json() # translate package data into python
+    data = await request.json()
 
     update_id = data.get("update_id")
     if update_id is not None:
@@ -97,14 +92,12 @@ async def receive_message(request: Request):
             return {"status": "ok"}
         _seen_updates.append(update_id)
 
-    # Check if the package actually contains a text message
     message = data.get("message") or {}
     if "text" in message:
-        chat_id = message["chat"]["id"]  # Grab the unique ID
-        user_text = message["text"]  # Grab the actual text the user typed
+        chat_id = message["chat"]["id"]
+        user_text = message["text"]
 
-        # --- YOUR BROADCAST TRIGGER ---
-        # Instantly send the message to the Next.js Dashboard before the AI starts thinking
+        # Publish incoming requests to dashboard subscribers before grant processing.
         dashboard_update = {
             "phone_id": chat_id,
             "text": user_text,

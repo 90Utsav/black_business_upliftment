@@ -15,7 +15,7 @@ def main() -> None:
     ing = sub.add_parser("ingest")
     ing.add_argument("--source", choices=["grants.gov-bulk", "grants.gov", "seed", "all"], default="all")
     ing.add_argument("--per-query", type=int, default=25)
-    sub.add_parser("index", help="embed new/changed grants (needs LLM_API_KEY)")
+    sub.add_parser("index", help="embed new or changed grants locally")
     q = sub.add_parser("ask", help="semantic search over embedded grants")
     q.add_argument("text"); q.add_argument("-k", type=int, default=5); q.add_argument("--state")
     u = sub.add_parser("understand", help="extract need/category/state/amount from a message (needs LLM_API_KEY)")

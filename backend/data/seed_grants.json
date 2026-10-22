@@ -542,5 +542,161 @@
     "states": [
       "DC"
     ]
+  },
+  {
+    "external_id": "galaxy-grants",
+    "title": "Galaxy Grants",
+    "funder": "Galaxy of Stars (Hidden Star Resources)",
+    "description": "Cash grant for women and minority business owners, whether new, experienced or aspiring. Free to apply. Winners are announced the week after the deadline.",
+    "amount_min": 2500,
+    "amount_max": 2500,
+    "deadline": "2026-10-31",
+    "url": "https://galaxyofstars.org/galaxy-grants/",
+    "eligibility": "Women and minority business owners, whether new, experienced or aspiring. No state or residency rule was found on the page.",
+    "categories": [
+      "small-business",
+      "women",
+      "minority"
+    ],
+    "states": [],
+    "status": "open"
+  },
+  {
+    "external_id": "freed-fellowship",
+    "title": "Freed Fellowship",
+    "funder": "Freed Fellowship",
+    "description": "A $500 no-strings-attached grant to one micro or small business owner each month. Every Fellow is also considered for a $2,500 year-end grant. Applications are rolling; to be considered for a month, apply by midnight Eastern on its last day.",
+    "amount_min": 500,
+    "amount_max": 2500,
+    "deadline": null,
+    "url": "https://freedfellowship.com/",
+    "eligibility": "Any micro or small business owner in the US. Nonprofits are not supported. Application fee: $19.",
+    "categories": [
+      "small-business"
+    ],
+    "states": [],
+    "status": "open"
+  },
+  {
+    "external_id": "secretsos-small-business",
+    "title": "Secretsos Small Business Grant",
+    "funder": "Secretsos Foundation",
+    "description": "A $2,500 grant to accelerate a small business owner's success. Applications open at the start of each quarter and close at its end (Q4 is October 1 to December 31). One winner is announced after each window.",
+    "amount_min": 2500,
+    "amount_max": 2500,
+    "deadline": null,
+    "url": "https://secretsos.com/grants/",
+    "eligibility": "Age 21 or older with an active, registered business operating in a US state or territory. Application fee: $15.",
+    "categories": [
+      "small-business"
+    ],
+    "states": [],
+    "status": "open"
+  },
+  {
+    "external_id": "nourishmd-maryland",
+    "title": "NourishMD Grant Program",
+    "funder": "Maryland Department of Housing and Community Development",
+    "description": "Capital grants for food retailers: equipment, renovations, inventory expansion, working capital, SNAP/EBT technology, a delivery vehicle, and solar or heat pump installations. Two tiers: the Tier 1 portal closes November 2, 2026 at 5:00 p.m. EST and Tier 2 closes February 4, 2027.",
+    "amount_min": 25000,
+    "amount_max": 150000,
+    "deadline": "2026-11-02",
+    "url": "https://dhcd.maryland.gov/business-development/nourishmd-grant-program",
+    "eligibility": "For-profit or nonprofit food retailers serving a community with a Maryland Community Compass Fresh Food Gap Score of 65% or higher.",
+    "categories": [
+      "food",
+      "food-retail",
+      "grocery",
+      "corner-store",
+      "small-business"
+    ],
+    "states": [
+      "MD"
+    ],
+    "status": "open"
+  },
+  {
+    "external_id": "preserve-route-66",
+    "title": "Preserve Route 66 Legacy Business Grant Fund",
+    "funder": "National Trust for Historic Preservation",
+    "description": "Grants for Route 66 legacy businesses for capital improvements, planning, and marketing and outreach. Amounts generally range from $5,000 to $10,000 and no match is required. Applications open September 1, 2026 and are due November 12, 2026 at 11:59 pm local time.",
+    "amount_min": 5000,
+    "amount_max": 10000,
+    "deadline": "2026-11-12",
+    "url": "https://savingplaces.org/preserve-route-66-legacy-business-grant-fund",
+    "eligibility": "Owner (age 18 or older) of a legacy business in a community along Route 66 in Illinois, Missouri, Kansas, Oklahoma, Texas, New Mexico, Arizona or California. Not part of a national franchise. Digital-only businesses are not eligible.",
+    "categories": [
+      "small-business",
+      "historic-preservation"
+    ],
+    "states": [
+      "IL",
+      "MO",
+      "KS",
+      "OK",
+      "TX",
+      "NM",
+      "AZ",
+      "CA"
+    ],
+    "status": "open"
+  },
+  {
+    "external_id": "mn-agri-livestock",
+    "title": "AGRI Livestock Investment Grant",
+    "funder": "Minnesota Department of Agriculture",
+    "description": "Reimburses 50% of the first $20,000 of eligible expenses and 25% of additional eligible costs, up to a $25,000 maximum, for Minnesota livestock operations. Applications are due by 4 p.m. Central Time on November 17, 2026.",
+    "amount_min": 400,
+    "amount_max": 25000,
+    "deadline": "2026-11-17",
+    "url": "https://www.mda.state.mn.us/business-dev-loans-grants/agri-livestock-investment-grant",
+    "eligibility": "Minnesota resident, business entity authorized to farm in Minnesota, or Tribal government; the principal operator of a Minnesota livestock operation with at least $1,000 in annual livestock product sales.",
+    "categories": [
+      "agriculture",
+      "livestock",
+      "cattle"
+    ],
+    "states": [
+      "MN"
+    ],
+    "status": "open"
+  },
+  {
+    "external_id": "prosper-portland-pip",
+    "title": "Prosperity Investment Program (Prosper Portland)",
+    "funder": "Prosper Portland",
+    "description": "Funds up to 75 percent of approved hard and soft costs for storefront, tenant and building improvements; the applicant covers the other 25 percent. Funds are subject to budget availability and there is no stated deadline.",
+    "amount_min": null,
+    "amount_max": 75000,
+    "deadline": null,
+    "url": "https://prosperportland.us/our-work/prosperity-investment-program-pip/",
+    "eligibility": "Business owners and property owners in an eligible Portland TIF district (Central Eastside, Cully, Gateway, Interstate Corridor, Lents Town Center, Old Town, North Macadam) with at least three years left on their lease. Not eligible: national franchises, nonprofits (except in Old Town), work done before a grant agreement. The Central Eastside Corridor cap is $25,000 and soft costs are capped at $25,000.",
+    "categories": [
+      "small-business",
+      "storefront"
+    ],
+    "states": [
+      "OR"
+    ],
+    "status": "open"
+  },
+  {
+    "external_id": "seattle-restored-popup",
+    "title": "Seattle Restored Pop-Up Program",
+    "funder": "Seattle Restored",
+    "description": "Selected small businesses get a no-cost six-month pop-up storefront and a $2,500 participation stipend. 2027 pop-up applications open October 28, 2026 and close November 24, 2026.",
+    "amount_min": 2500,
+    "amount_max": 2500,
+    "deadline": "2026-11-24",
+    "url": "https://seattlerestored.org/participate/apply/",
+    "eligibility": "For-profit businesses with no more than one operating business location. Nonprofits and fiscally sponsored groups are not eligible.",
+    "categories": [
+      "small-business",
+      "retail"
+    ],
+    "states": [
+      "WA"
+    ],
+    "status": "forecasted"
   }
 ]
