@@ -35,14 +35,15 @@ export default function Stories() {
       <div className="container">
         <header className={styles.header}>
           <p className={styles.kicker}>Stories</p>
-          <h1 className={styles.title}>Funded by a text. Told by the people who sent it.</h1>
+          <h1 className={styles.title}>Illustrative community funding scenarios.</h1>
           <p className={styles.lead}>
-            Organizers, owners and artists across the South on what changed
-            when the right grant found them.
+            Examples of how a grant search could support organizers, owners
+            and artists.
           </p>
           <p className={styles.sample}>
-            Sample stories for demonstration. People and organizations shown
-            here are fictional composites.
+            These are fictional scenarios, not customer testimonials or
+            verified awards. The programs shown are not connected to the
+            Telegram backend catalog.
           </p>
         </header>
 
@@ -68,7 +69,7 @@ export default function Stories() {
             </div>
           </div>
           <aside className={styles.featuredAside}>
-            <p className={styles.asideLabel}>Grant received</p>
+            <p className={styles.asideLabel}>Illustrative grant</p>
             <p className={styles.asideGrant}>{featured.grant}</p>
             <p className={styles.asideAmount}>{featured.amount}</p>
             <p className={styles.asideCategory}>{featured.category}</p>
@@ -103,13 +104,13 @@ export default function Stories() {
         </ul>
 
         <Reveal className={styles.cta}>
-          <h2>Got funded through CivicText?</h2>
+          <h2>Have feedback about the grant finder?</h2>
           <p>
-            We would love to tell your story. Email us a few sentences and we
-            will follow up.
+            Tell us how the Telegram bot works for you. Email a few details and
+            we will follow up.
           </p>
           <a href="mailto:stories@civictext.org" className={styles.ctaBtn}>
-            Share your story
+            Send feedback
           </a>
         </Reveal>
       </div>
