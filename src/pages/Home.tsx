@@ -4,7 +4,7 @@ import HowItWorks from '../components/HowItWorks';
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'CivicText - Funding Our Futures, One Text at a Time';
+    document.title = 'CivicText - Find grants through Telegram';
   }, []);
 
   return (

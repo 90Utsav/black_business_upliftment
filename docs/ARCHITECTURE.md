@@ -2,9 +2,9 @@
 
 ## Web application
 
-The React application provides grant filtering, a local conversation demo, application starters, and saved drafts. Intent parsing and ranking run in the browser against sample TypeScript records. Authentication and saved drafts use localStorage.
+The React application provides a Telegram entry point, sample grant filtering, fictional community stories, and a local development request monitor. Grant filtering runs in the browser against sample TypeScript records.
 
-The web conversation does not call the Python grant service. The backend exposes a server-sent event stream for incoming Telegram requests.
+Grant conversations take place in Telegram through the Python service. The backend exposes a server-sent event stream for incoming Telegram requests; the website monitor is enabled only during local development.
 
 ## Grant service
 
@@ -39,7 +39,7 @@ A stored listing does not establish current availability or eligibility. Officia
 
 ## Operational limitations
 
-The frontend demonstration and backend maintain separate datasets and matching implementations. Browser authentication is suitable for demonstration only.
+The frontend sample grant search and backend maintain separate datasets and matching implementations.
 
 Provider quotas and availability affect request extraction. Model fallbacks reduce disruption but do not guarantee availability. First-time indexing requires network access to download the embedding model.
 

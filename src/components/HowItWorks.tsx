@@ -21,8 +21,8 @@ const iconProps = {
 
 const steps: Step[] = [
   {
-    title: '1. Send a Text',
-    body: 'describe your project or needs in your everyday voice.',
+    title: '1. Open Telegram',
+    body: 'Start a chat with CivicText’s bot. No SMS signup or website account is needed.',
     icon: (
       <svg {...iconProps} aria-hidden="true">
         <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l2-4.6A8.4 8.4 0 1 1 21 11.5z" />
@@ -31,8 +31,8 @@ const steps: Step[] = [
     ),
   },
   {
-    title: '2. Instantly Matched',
-    body: 'our database finds grants built for community leaders.',
+    title: '2. Describe your project',
+    body: 'Share what your business or community project does and what funding you need.',
     icon: (
       <svg {...iconProps} aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
@@ -42,8 +42,8 @@ const steps: Step[] = [
     ),
   },
   {
-    title: '3. Get Your Draft',
-    body: 'get the exact match and an application starter sent straight to your phone.',
+    title: '3. Get grant details',
+    body: 'The bot searches its current catalog and replies with available matches and application links.',
     icon: (
       <svg {...iconProps} aria-hidden="true">
         <rect x="7" y="2.5" width="10" height="19" rx="2" />

@@ -1,17 +1,18 @@
 # CivicText
 
-CivicText helps small-business owners and community organizers discover funding opportunities through plain-language grant search. The project includes a React web application and a Python grant retrieval service with Telegram integration.
+CivicText helps small-business owners and community organizers discover funding opportunities through Telegram. The project includes a React website and a Python service for grant ingestion, request understanding, and retrieval.
 
 ## Getting started
 
-Requires Node.js compatible with the installed Vite release and Python 3.10+ for the backend.
-
 ```bash
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-The web application runs at `http://localhost:5173`. Backend configuration and commands are documented in [backend/README.md](backend/README.md).
+The website runs at `http://localhost:5173`. Set `VITE_TELEGRAM_BOT_USERNAME` in the root `.env` to the bot username without `@` to enable Telegram links. `VITE_BACKEND_URL` defaults to `http://127.0.0.1:8000` for the local request monitor. Restart Vite after changing configuration.
+
+Run the backend separately using [backend/README.md](backend/README.md). Backend secrets belong in `backend/.env`.
 
 ## Development
 
@@ -25,32 +26,32 @@ npm run preview  # Preview the production build
 
 | Directory | Purpose |
 | --- | --- |
-| `src/pages/` | Landing page, grant search, conversation demo, stories, and account pages |
+| `src/pages/` | Landing page, Telegram entry point, sample grant search, stories, and request monitor |
 | `src/components/` | Shared UI and feature components |
-| `src/auth/` | Authentication interfaces, session state, and browser demo service |
-| `src/data/` | Sample grant listings, stories, and shared data types |
-| `src/lib/` | Grant ranking, intent parsing, conversations, and saved drafts |
+| `src/data/` | Sample grant listings, fictional stories, and shared data types |
+| `src/lib/` | Grant filtering and platform configuration |
 | `public/` | Static assets |
 | `backend/grantfinder/` | Grant ingestion, storage, request understanding, and retrieval |
 | `backend/tests/` | Backend tests and retrieval evaluation cases |
 | `docs/` | System architecture |
 
-## Application features
+## Telegram bot
 
-- Grant search with audience, organization type, focus area, state, and funding filters.
-- Browser conversation demo with match cards and application starters.
-- Account pages and saved application drafts.
-- Telegram grant requests backed by locally indexed grant records.
+`/demo` introduces the bot and links to Telegram when a username is configured. Messages are processed by the Python backend, which extracts the request, searches stored grant records, and replies through Telegram. The website does not simulate a conversation or generate application drafts.
 
-Search filters are stored in the URL for bookmarking and sharing. Styling uses CSS Modules with shared design tokens in `src/index.css`.
+Request understanding sends message text to Google Gemini. Grant details come from stored records; applicants should confirm eligibility and deadlines with the official funder.
 
-## Demo boundaries
+## Sample content
 
-The web conversation runs entirely in the browser and is separate from the Python service. Frontend grant listings are fictional examples; success stories are fictional composites. These are labeled in the interface.
+`/grants` filters fictional sample listings in the browser. Its dataset is separate from the backend catalog. Search filters are stored in the URL for bookmarking and sharing.
 
-Authentication uses a browser-only demo service backed by localStorage. Passwords are represented by salted PBKDF2-SHA256 hashes, but browser-side authentication does not provide server-enforced access control. The demo account is `demo@civictext.org` with password `password123`.
+`/stories` contains fictional community scenarios, labeled as illustrations rather than verified awards or customer testimonials.
 
-Backend data sources include curated records, unverified third-party listings, and Grants.gov. Data provenance and operational limitations are described in the [architecture](docs/ARCHITECTURE.md).
+Backend sources include curated records, unverified third-party listings, and Grants.gov. See [system architecture](docs/ARCHITECTURE.md) for provenance and operational limitations.
+
+## Local request monitor
+
+In Vite development mode, `/dashboard` displays incoming Telegram messages and chat IDs from a localhost backend's `/stream` endpoint. The monitor is disabled in production builds and for non-local backend URLs. The backend stream currently has no authentication.
 
 ## Deployment
 
@@ -58,7 +59,9 @@ Backend data sources include curated records, unverified third-party listings, a
 npm run build
 ```
 
-Publish `dist/` to a static host configured to serve `index.html` for application routes. Backend hosting is a separate deployment and requires environment configuration, grant ingestion, and indexing. Fonts load from Google Fonts; the hero image loads from Unsplash.
+The production website is generated in `dist/`. Static hosting requires an `index.html` fallback for application routes. The root `vercel.json` declares separate Vite and FastAPI services with routing for `/api/*` and the website.
+
+Set `VITE_TELEGRAM_BOT_USERNAME` for website bot links. Backend deployment requires `TELEGRAM_TOKEN`, LLM configuration, database ingestion, and indexing. Fonts load from Google Fonts; the hero image loads from Unsplash.
 
 ## License
 

@@ -1,20 +1,6 @@
-import PhoneMockup, { type ChatMessage } from './PhoneMockup';
+import { Link } from 'react-router-dom';
+import { getTelegramBotUrl } from '../lib/platform';
 import styles from './Hero.module.css';
-
-const demoMessages: ChatMessage[] = [
-  {
-    id: 1,
-    from: 'user',
-    text: 'I run a youth mentorship program in Atlanta & need supplies.',
-  },
-  {
-    id: 2,
-    from: 'bot',
-    text:
-      'Hey! We found a match: The "Atlanta Rise Grant" offers up to $2,500. Deadline: Nov 30.\n\n' +
-      'Use this draft to apply: "We are seeking support to provide supply bags for our Atlanta youth..."',
-  },
-];
 
 const pillIcon = {
   width: 14,
@@ -50,7 +36,7 @@ const tags = [
     ),
   },
   {
-    label: 'Easy SMS',
+    label: 'Telegram bot',
     tone: styles.tagRose,
     icon: (
       <svg {...pillIcon} aria-hidden="true">
@@ -61,27 +47,35 @@ const tags = [
 ];
 
 export default function Hero() {
+  const botUrl = getTelegramBotUrl();
+
   return (
     <section className={styles.hero}>
       <div className={`container ${styles.grid}`}>
         <div className={styles.copy}>
           <h1 className={styles.title}>
-            <span className={styles.titleLine}>Funding Our Futures.</span>{' '}
-            <span className={styles.titleLine}>One Text at a Time.</span>
+            <span className={styles.titleLine}>Find grants through</span>{' '}
+            <span className={styles.titleLine}>Telegram.</span>
           </h1>
           <p className={styles.lead}>
-            The SMS Grant Finder built for grassroots organizers. Text your
-            community needs and instantly get matched with local capital&mdash;no
-            complex databases, no red tape.
+            Tell CivicText&rsquo;s Telegram bot about your business or community
+            project. It searches the backend&rsquo;s grant catalog and replies
+            with relevant programs, funding details, and application links.
           </p>
 
           <div className={styles.actions}>
-            <a href="/demo" className={styles.primary}>
-              Try the Demo
-            </a>
-            <a href="/grants" className={styles.secondary}>
-              View Active Grants <span aria-hidden="true">&rarr;</span>
-            </a>
+            {botUrl ? (
+              <a className={styles.primary} href={botUrl} target="_blank" rel="noopener noreferrer">
+                Open Telegram bot
+              </a>
+            ) : (
+              <Link to="/demo" className={styles.primary}>
+                Open Telegram bot
+              </Link>
+            )}
+            <Link to="/grants" className={styles.secondary}>
+              Browse sample listings <span aria-hidden="true">&rarr;</span>
+            </Link>
           </div>
 
           <ul className={styles.tags} aria-label="Highlights">
@@ -92,6 +86,10 @@ export default function Hero() {
               </li>
             ))}
           </ul>
+          <p className={styles.catalogNote}>
+            The backend catalog is still in development and may include
+            fictional sample grants. Verify opportunities with the funder.
+          </p>
         </div>
 
         <div className={styles.visual}>
@@ -103,8 +101,15 @@ export default function Hero() {
               loading="eager"
             />
           </div>
-          <div className={styles.phone}>
-            <PhoneMockup messages={demoMessages} />
+          <div className={styles.preview}>
+            <p className={styles.previewLabel}>A real request can be simple</p>
+            <p className={styles.previewMessage}>
+              &ldquo;I run a flower shop and need funding for pots.&rdquo;
+            </p>
+            <p className={styles.previewReply}>
+              CivicText searches its grant catalog and shares matching details
+              when available.
+            </p>
           </div>
         </div>
       </div>

@@ -1,134 +1,147 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
-import { grants } from '../data/grants';
-import { daysUntil, formatAmount } from '../lib/grantSearch';
-import { getSaved, onSavedChange, removeMatch, type SavedMatch } from '../lib/savedMatches';
+import { useEffect, useRef, useState } from 'react';
+import { backendUrl, isLocalBackendUrl } from '../lib/platform';
 import styles from './Dashboard.module.css';
 
+interface StreamRequest {
+  id: number;
+  phoneId: string | number;
+  text: string;
+  status: string;
+  receivedAt: Date;
+}
+
+type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disabled' | 'error';
+const localStreamEnabled = import.meta.env.DEV && isLocalBackendUrl();
+
+function isRequest(value: unknown): value is { phone_id: string | number; text: string; status: string } {
+  if (!value || typeof value !== 'object') return false;
+
+  const record = value as Record<string, unknown>;
+  return (
+    (typeof record.phone_id === 'string' || typeof record.phone_id === 'number') &&
+    typeof record.text === 'string' &&
+    typeof record.status === 'string'
+  );
+}
+
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [leaving, setLeaving] = useState(false);
-  const [saved, setSaved] = useState<SavedMatch[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [requests, setRequests] = useState<StreamRequest[]>([]);
+  const [connection, setConnection] = useState<ConnectionState>(
+    localStreamEnabled ? 'connecting' : 'disabled',
+  );
+  const [streamError, setStreamError] = useState('');
+  const nextId = useRef(0);
 
   useEffect(() => {
-    document.title = 'Dashboard - CivicText';
+    document.title = 'Telegram Request Monitor - CivicText';
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    const load = () => setSaved(getSaved(user.id));
-    load();
-    return onSavedChange(load);
-  }, [user]);
+    if (!localStreamEnabled) return;
 
-  const handleSignOut = async () => {
-    setLeaving(true);
-    await signOut();
-    navigate('/', { replace: true });
+    const stream = new EventSource(`${backendUrl}/stream`);
+    stream.onopen = () => {
+      setConnection('connected');
+      setStreamError('');
+    };
+    stream.onmessage = (event) => {
+      let payload: unknown;
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        setConnection('error');
+        setStreamError('The backend sent an unreadable stream event.');
+        return;
+      }
+
+      if (!isRequest(payload)) {
+        setConnection('connected');
+        return;
+      }
+
+      setRequests((current) => [
+        {
+          id: nextId.current++,
+          phoneId: payload.phone_id,
+          text: payload.text,
+          status: payload.status,
+          receivedAt: new Date(),
+        },
+        ...current,
+      ].slice(0, 50));
+      setConnection('connected');
+      setStreamError('');
+    };
+    stream.onerror = () => {
+      setConnection('reconnecting');
+      setStreamError('Could not reach the backend stream. The browser will retry automatically.');
+    };
+
+    return () => stream.close();
+  }, []);
+
+  const statusText: Record<ConnectionState, string> = {
+    connecting: 'Connecting to backend…',
+    connected: 'Connected to backend stream',
+    reconnecting: 'Connection interrupted',
+    disabled: 'Live stream disabled outside local development',
+    error: 'Stream error',
   };
-
-  const copy = async (s: SavedMatch) => {
-    try {
-      await navigator.clipboard.writeText(s.draft);
-      setCopiedId(s.id);
-      setTimeout(() => setCopiedId(null), 1800);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
-
-  const firstName = user?.name.split(' ')[0] ?? 'there';
-  const withGrant = saved
-    .map((s) => ({ saved: s, grant: grants.find((g) => g.id === s.grantId) }))
-    .filter((x): x is { saved: SavedMatch; grant: NonNullable<typeof x.grant> } => Boolean(x.grant));
-  const dueSoon = withGrant.filter(({ grant }) => {
-    const d = daysUntil(grant.deadline);
-    return d !== null && d >= 0 && d <= 30;
-  }).length;
 
   return (
     <section className={styles.section}>
       <div className="container">
-        <p className={styles.kicker}>Dashboard</p>
-        <h1 className={styles.title}>Welcome, {firstName}.</h1>
+        <p className={styles.kicker}>Backend monitor</p>
+        <h1 className={styles.title}>Incoming Telegram requests</h1>
         <p className={styles.lead}>
-          Signed in as <strong>{user?.email}</strong>. Drafts you save from the demo land here.
+          This local development view listens to the backend&rsquo;s
+          {' '}<code>/stream</code> endpoint. Telegram replies are sent directly
+          to the person in Telegram.
         </p>
 
-        <div className={styles.cards}>
-          <article className={styles.card}>
-            <h2>Saved matches</h2>
-            <p className={styles.big}>{withGrant.length}</p>
-            <p className={styles.muted}>Grants you asked for a draft on.</p>
-          </article>
-          <article className={styles.card}>
-            <h2>Drafts ready</h2>
-            <p className={styles.big}>{withGrant.filter((x) => x.saved.draft).length}</p>
-            <p className={styles.muted}>Application starters you can copy.</p>
-          </article>
-          <article className={styles.card}>
-            <h2>Due in 30 days</h2>
-            <p className={styles.big}>{dueSoon}</p>
-            <p className={styles.muted}>{dueSoon ? 'Do not let these slip.' : 'Nothing urgent right now.'}</p>
-          </article>
-        </div>
+        <p className={`${styles.connection} ${styles[connection]}`} role="status">
+          <span className={styles.statusDot} aria-hidden="true" />
+          {statusText[connection]}
+        </p>
 
-        <h2 className={styles.sectionTitle}>Your saved drafts</h2>
-        {withGrant.length === 0 ? (
-          <div className={styles.empty}>
-            <p>No saved drafts yet.</p>
-            <Link to="/demo" className={styles.emptyBtn}>
-              Try the demo
-            </Link>
+        {!localStreamEnabled ? (
+          <div className={styles.notice}>
+            The live stream is only enabled in local development when the
+            backend URL is localhost. The current stream has no authentication
+            and contains message text and Telegram chat IDs; do not expose it
+            publicly before backend authentication is added.
           </div>
         ) : (
-          <ul className={styles.list}>
-            {withGrant.map(({ saved: s, grant }) => {
-              const d = daysUntil(grant.deadline);
-              return (
-                <li key={s.id} className={styles.item}>
-                  <div className={styles.itemHead}>
-                    <div>
-                      <p className={styles.itemName}>{grant.name}</p>
-                      <p className={styles.itemMeta}>
-                        {grant.funder} &middot; {formatAmount(grant.amountMin, grant.amountMax)} &middot;{' '}
-                        {d === null ? 'Rolling' : d < 0 ? 'Closed' : `${d} days left`}
-                      </p>
-                    </div>
-                    <div className={styles.itemActions}>
-                      <button type="button" className={styles.smallBtn} onClick={() => copy(s)}>
-                        {copiedId === s.id ? 'Copied' : 'Copy draft'}
-                      </button>
-                      <a className={styles.smallLink} href={grant.url} target="_blank" rel="noopener noreferrer">
-                        Apply
-                      </a>
-                      <button
-                        type="button"
-                        className={styles.remove}
-                        onClick={() => user && removeMatch(user.id, s.id)}
-                        aria-label={`Remove ${grant.name}`}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                  <p className={styles.itemMessage}>You wrote: &ldquo;{s.message}&rdquo;</p>
-                  <details className={styles.details}>
-                    <summary>Show draft</summary>
-                    <pre className={styles.draft}>{s.draft}</pre>
-                  </details>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+          <>
+            {streamError && <p className={styles.error} role="alert">{streamError}</p>}
+            <div className={styles.feedHeader}>
+              <h2>Recent requests</h2>
+              <span>{requests.length} received this session</span>
+            </div>
 
-        <button type="button" className={styles.signOut} onClick={handleSignOut} disabled={leaving}>
-          {leaving ? 'Signing out...' : 'Sign out'}
-        </button>
+            {requests.length === 0 ? (
+              <div className={styles.empty}>
+                Requests from the Telegram bot will appear here while the
+                backend is running.
+              </div>
+            ) : (
+              <ul className={styles.list} aria-live="polite">
+                {requests.map((request) => (
+                  <li className={styles.request} key={request.id}>
+                    <div className={styles.requestHeader}>
+                      <strong>{request.status}</strong>
+                      <time dateTime={request.receivedAt.toISOString()}>
+                        {request.receivedAt.toLocaleTimeString()}
+                      </time>
+                    </div>
+                    <p className={styles.message}>{request.text}</p>
+                    <p className={styles.chatId}>Telegram chat ID: {request.phoneId}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

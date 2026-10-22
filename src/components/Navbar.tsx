@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
+import { getTelegramBotUrl } from '../lib/platform';
 import styles from './Navbar.module.css';
 
 const links = [
-  { label: 'Try the Demo', href: '/demo' },
   { label: 'How it Works', href: '/#how-it-works' },
   { label: 'Grants Database', href: '/grants' },
   { label: 'Stories', href: '/stories' },
@@ -13,7 +12,7 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
-  const { status, user } = useAuth();
+  const botUrl = getTelegramBotUrl();
   const close = () => setOpen(false);
 
   // Deepen the header shadow once the page starts scrolling under it.
@@ -52,20 +51,14 @@ export default function Navbar() {
               {l.label}
             </a>
           ))}
-
-          {status === 'authenticated' ? (
-            <Link to="/dashboard" className={styles.cta} onClick={close}>
-              {user?.name.split(' ')[0] ?? 'Dashboard'}
-            </Link>
+          {botUrl ? (
+            <a className={styles.cta} href={botUrl} target="_blank" rel="noopener noreferrer" onClick={close}>
+              Open Telegram
+            </a>
           ) : (
-            <>
-              <Link to="/signin" className={styles.login} onClick={close}>
-                Log in
-              </Link>
-              <Link to="/signup" className={styles.cta} onClick={close}>
-                Sign Up
-              </Link>
-            </>
+            <Link to="/demo" className={styles.cta} onClick={close}>
+              Open Telegram
+            </Link>
           )}
         </nav>
       </div>
