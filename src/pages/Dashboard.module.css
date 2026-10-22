@@ -23,175 +23,110 @@
   color: var(--ink-soft);
 }
 
-.cards {
-  margin-top: 36px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
+.lead code {
+  color: var(--ink);
 }
 
-.card {
+.connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  padding: 8px 12px;
+  border-radius: 999px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 22px 24px;
-}
-
-.card h2 {
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.big {
-  margin-top: 10px;
-  font-family: var(--font-serif);
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1;
-}
-
-.muted {
-  margin-top: 10px;
+  color: var(--ink-soft);
   font-size: 0.88rem;
-  color: var(--muted);
-}
-
-.signOut {
-  margin-top: 36px;
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink);
   font-weight: 600;
-  padding: 11px 18px;
-  border-radius: 10px;
 }
 
-.signOut:hover:not(:disabled) {
-  border-color: var(--ink);
+.statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
 }
 
-.sectionTitle {
-  margin-top: 44px;
+.connected .statusDot {
+  background: #4b8b51;
+}
+
+.reconnecting .statusDot,
+.error .statusDot {
+  background: #b35330;
+}
+
+.notice,
+.error,
+.empty {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.error {
+  border-color: #ddb3a7;
+  color: #8a2a20;
+}
+
+.feedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 38px;
+}
+
+.feedHeader h2 {
   font-size: 1.4rem;
   color: var(--ink);
 }
 
-.empty {
-  margin-top: 14px;
-  background: #fff;
-  border: 1px dashed var(--line);
-  border-radius: 16px;
-  padding: 28px;
-  text-align: center;
-  color: var(--ink-soft);
-}
-
-.emptyBtn {
-  display: inline-block;
-  margin-top: 12px;
-  background: var(--terracotta);
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-weight: 600;
+.feedHeader span {
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 
 .list {
+  display: grid;
+  gap: 12px;
   list-style: none;
+  margin: 16px 0 0;
   padding: 0;
-  margin: 14px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
-.item {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+.request {
   padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
 }
 
-.itemHead {
+.requestHeader {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.itemName {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--ink);
-}
-
-.itemMeta {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.itemActions {
-  display: flex;
-  align-items: center;
   gap: 12px;
-}
-
-.smallBtn {
-  background: var(--ink);
-  color: #fff;
-  border: 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.smallLink {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--terracotta);
-}
-
-.remove {
-  background: none;
-  border: 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-  padding: 0;
-}
-
-.remove:hover {
-  color: #8a2a20;
-  text-decoration: underline;
-}
-
-.itemMessage {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-}
-
-.details {
-  margin-top: 10px;
-  font-size: 0.88rem;
-}
-
-.details summary {
-  cursor: pointer;
-  font-weight: 600;
   color: var(--ink);
 }
 
-.draft {
-  margin: 10px 0 0;
-  font: inherit;
-  font-size: 0.9rem;
+.requestHeader time,
+.chatId {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.message {
+  margin-top: 12px;
+  color: var(--ink);
   white-space: pre-wrap;
-  background: var(--cream);
-  border-radius: 10px;
-  padding: 14px;
+}
+
+.chatId {
+  margin-top: 10px;
+  color: var(--ink-soft);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 import GrantCard from '../components/grants/GrantCard';
 import GrantFilters from '../components/grants/GrantFilters';
@@ -49,13 +50,16 @@ export default function Grants() {
           <p className={styles.kicker}>Grants Database</p>
           <h1 className={styles.title}>Find funding built for people like you.</h1>
           <p className={styles.lead}>
-            Tell us about your background and your work. We will surface the
-            grants that were written with you in mind and rank the closest
-            fits first.
+            Explore this sample catalog with the site&rsquo;s local filters.
+            For grant search using the backend catalog, start a conversation
+            with CivicText on Telegram.
           </p>
           <p className={styles.sample}>
-            Sample listings for demonstration. Funders and programs shown here
-            are fictional.
+            These fictional sample listings are separate from the live
+            Telegram backend and are not application recommendations.
+          </p>
+          <p className={styles.sample}>
+            <Link to="/demo">Find grants with the Telegram bot &rarr;</Link>
           </p>
         </header>
 
