@@ -1,9 +1,8 @@
-"""What we tell a user when no stored grant matches (used by phase 4's no-match path).
+"""SBIR/STTR information displayed when no stored grant matches.
 
-SBIR/STTR is a federal R&D seed fund, not a business-type grant. Per the team's
-decision it is shown to every no-match user; the text states what it funds
-(new technology/products) so users can judge fit. Facts: sbir.gov/about (award ceilings as of 2026-10-16);
-eligibility/timing are the programs' standard rules; verify before launch.
+Describes federal R&D funding rather than general business grants.
+Source: sbir.gov/about; award ceilings recorded 2026-10-16.
+Eligibility, timing, and award limits require confirmation with the program.
 """
 
 SBIR_URL = "https://www.sbir.gov/"

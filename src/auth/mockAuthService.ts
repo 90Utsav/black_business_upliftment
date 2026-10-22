@@ -1,14 +1,9 @@
 import { AuthError, type AuthService, type User } from './types';
 
 /**
- * Browser-only mock backend. Accounts live in localStorage so you can
- * sign up, refresh, and sign back in.
- *
- * Passwords are never stored. Each account keeps a random salt and a
- * PBKDF2-SHA256 hash (Web Crypto, 150k iterations), the same approach a
- * real server would use. Still NOT for production: verification happens
- * in the browser, so anyone with the device can bypass it. It only
- * protects the plaintext password itself.
+ * Browser-only demonstration authentication with localStorage persistence.
+ * Passwords use per-account salts and PBKDF2-SHA256 hashes (150,000 iterations).
+ * Client-side verification does not provide server-enforced access control.
  */
 
 const USERS_KEY = 'civictext.mock.users.v2';

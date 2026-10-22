@@ -1,10 +1,10 @@
-"""Phase 3: turn a free-text message into a structured request.
+"""Convert a free-text message into a structured grant request.
 
 "I run a youth basketball camp in Atlanta and need money for jerseys"
   -> need="jerseys", category="youth sports", state="GA", business_type="nonprofit/camp" ...
 
 One LLM call with structured output (Pydantic). The result is cleaned in plain Python
-afterwards, so a sloppy model answer (state "Georgia", amount "$5k") cannot reach retrieval.
+afterwards, so an invalid model value (state "Georgia", amount "$5k") cannot reach retrieval.
 """
 from __future__ import annotations
 
