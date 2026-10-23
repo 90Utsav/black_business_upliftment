@@ -3,7 +3,6 @@
 interface ImportMetaEnv {
   readonly DEV: boolean;
   readonly VITE_BACKEND_URL?: string;
-  readonly VITE_TELEGRAM_BOT_USERNAME?: string;
 }
 
 interface ImportMeta {

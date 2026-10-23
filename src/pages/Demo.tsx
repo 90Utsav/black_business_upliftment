@@ -23,22 +23,23 @@ export default function Demo() {
               grant details back in Telegram.
             </p>
 
-            {botUrl && (
-              <a className={styles.action} href={botUrl} target="_blank" rel="noopener noreferrer">
-                Open CivicText on Telegram <span aria-hidden="true">&rarr;</span>
-              </a>
-            )}
+            <a className={styles.action} href={botUrl} target="_blank" rel="noopener noreferrer">
+              Open CivicText on Telegram <span aria-hidden="true">&rarr;</span>
+            </a>
           </div>
 
           <figure className={styles.qrCard}>
             <img
               className={styles.qrImage}
               src="/civictext-telegram-qr.png"
-              alt="QR code for opening the Civic Grant Bot on Telegram"
+              alt="QR code for opening CivicText's @CivicS123_bot on Telegram"
             />
             <figcaption className={styles.qrCaption}>
               <strong>Scan to open the bot</strong>
-              <span>Find us on Telegram at @CIVICGRANTBOT</span>
+              <span>Find us on Telegram at @CivicS123_bot</span>
+              <a className={styles.qrLink} href={botUrl} target="_blank" rel="noopener noreferrer">
+                Or open the bot on Telegram <span aria-hidden="true">&rarr;</span>
+              </a>
             </figcaption>
           </figure>
         </div>

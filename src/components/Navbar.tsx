@@ -51,15 +51,9 @@ export default function Navbar() {
               {l.label}
             </a>
           ))}
-          {botUrl ? (
-            <a className={styles.cta} href={botUrl} target="_blank" rel="noopener noreferrer" onClick={close}>
-              Open Telegram
-            </a>
-          ) : (
-            <Link to="/demo" className={styles.cta} onClick={close}>
-              Open Telegram
-            </Link>
-          )}
+          <a className={styles.cta} href={botUrl} target="_blank" rel="noopener noreferrer" onClick={close}>
+            Open Telegram
+          </a>
         </nav>
       </div>
     </header>

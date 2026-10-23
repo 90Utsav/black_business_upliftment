@@ -1,11 +1,5 @@
-const configuredUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, '');
-
-export function getTelegramBotUrl(): string | null {
-  if (!configuredUsername || !/^[A-Za-z0-9_]{5,32}$/.test(configuredUsername)) {
-    return null;
-  }
-
-  return `https://t.me/${configuredUsername}`;
+export function getTelegramBotUrl(): string {
+  return 'https://t.me/CivicS123_bot';
 }
 
 export const backendUrl =

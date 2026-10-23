@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { getTelegramBotUrl } from '../lib/platform';
 import styles from './Hero.module.css';
 
 const pillIcon = {
@@ -47,8 +46,6 @@ const tags = [
 ];
 
 export default function Hero() {
-  const botUrl = getTelegramBotUrl();
-
   return (
     <section className={styles.hero}>
       <div className={`container ${styles.grid}`}>
@@ -64,15 +61,9 @@ export default function Hero() {
           </p>
 
           <div className={styles.actions}>
-            {botUrl ? (
-              <a className={styles.primary} href={botUrl} target="_blank" rel="noopener noreferrer">
-                Open Telegram bot
-              </a>
-            ) : (
-              <Link to="/demo" className={styles.primary}>
-                Open Telegram bot
-              </Link>
-            )}
+            <Link to="/demo" className={styles.primary}>
+              Try the Demo
+            </Link>
             <Link to="/grants" className={styles.secondary}>
               Browse sample listings <span aria-hidden="true">&rarr;</span>
             </Link>

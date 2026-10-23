@@ -10,7 +10,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The website runs at `http://localhost:5173`. Set `VITE_TELEGRAM_BOT_USERNAME` in the root `.env` to the bot username without `@` to enable Telegram links. `VITE_BACKEND_URL` defaults to `http://127.0.0.1:8000` for the local request monitor. Restart Vite after changing configuration.
+The website runs at `http://localhost:5173`. Telegram links point to [@CivicS123_bot](https://t.me/CivicS123_bot). `VITE_BACKEND_URL` defaults to `http://127.0.0.1:8000` for the local request monitor. Restart Vite after changing configuration.
 
 Run the backend separately using [backend/README.md](backend/README.md). Backend secrets belong in `backend/.env`.
 
@@ -61,7 +61,7 @@ npm run build
 
 The production website is generated in `dist/`. Static hosting requires an `index.html` fallback for application routes. The root `vercel.json` declares separate Vite and FastAPI services with routing for `/api/*` and the website.
 
-Set `VITE_TELEGRAM_BOT_USERNAME` for website bot links. Backend deployment requires `TELEGRAM_TOKEN`, LLM configuration, database ingestion, and indexing. Fonts load from Google Fonts; the hero image loads from Unsplash.
+Backend deployment requires `TELEGRAM_TOKEN`, LLM configuration, database ingestion, and indexing. Fonts load from Google Fonts; the hero image loads from Unsplash.
 
 ## License
 
@@ -69,7 +69,7 @@ The root [vercel.json](./vercel.json) configures Vercel as a multi-service
 project: the Vite app is served by the `app` service, `/api/*` requests are
 forwarded to the FastAPI `backend` service, and all other paths go to the app.
 Configure the backend's `TELEGRAM_TOKEN` and LLM settings as Vercel environment
-variables. Set `VITE_TELEGRAM_BOT_USERNAME` for the website's Telegram links.
+variables. Website Telegram links point to [@CivicS123_bot](https://t.me/CivicS123_bot).
 
 The Grants page uses bundled sample listings and does not require a hosted
 database or backend connection.

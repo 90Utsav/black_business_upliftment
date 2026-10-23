@@ -104,6 +104,18 @@
   font-size: 0.82rem;
 }
 
+.qrLink {
+  justify-self: center;
+  margin-top: 8px;
+  color: var(--terracotta);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.qrLink:hover {
+  text-decoration: underline;
+}
+
 .details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
