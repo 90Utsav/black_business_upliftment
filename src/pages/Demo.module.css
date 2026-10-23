@@ -3,7 +3,18 @@
 }
 
 .content {
-  max-width: 760px;
+  max-width: 980px;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 330px);
+  gap: clamp(32px, 6vw, 72px);
+  align-items: center;
+}
+
+.copy {
+  min-width: 0;
 }
 
 .kicker {
@@ -59,6 +70,40 @@
   font-size: 0.9em;
 }
 
+.qrCard {
+  width: 100%;
+  max-width: 330px;
+  justify-self: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 22px 48px -30px rgba(43, 29, 58, 0.45);
+}
+
+.qrImage {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.qrCaption {
+  display: grid;
+  gap: 3px;
+  padding: 14px 6px 4px;
+  text-align: center;
+}
+
+.qrCaption strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.qrCaption span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -99,6 +144,16 @@
 
 .sampleLink a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qrCard {
+    justify-self: center;
+  }
 }
 
 @media (max-width: 600px) {

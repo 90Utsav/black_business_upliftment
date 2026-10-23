@@ -13,25 +13,35 @@ export default function Demo() {
   return (
     <section className={styles.section}>
       <div className={`container ${styles.content}`}>
-        <p className={styles.kicker}>CivicText on Telegram</p>
-        <h1 className={styles.title}>Tell the bot what your business needs.</h1>
-        <p className={styles.lead}>
-          Describe your business or community project and what you need funding
-          for. The backend searches its current grant catalog and sends matching
-          grant details back in Telegram.
-        </p>
+        <div className={styles.intro}>
+          <div className={styles.copy}>
+            <p className={styles.kicker}>CivicText on Telegram</p>
+            <h1 className={styles.title}>Tell the bot what your business needs.</h1>
+            <p className={styles.lead}>
+              Describe your business or community project and what you need funding
+              for. The backend searches its current grant catalog and sends matching
+              grant details back in Telegram.
+            </p>
 
-        {botUrl ? (
-          <a className={styles.action} href={botUrl} target="_blank" rel="noopener noreferrer">
-            Open CivicText on Telegram <span aria-hidden="true">&rarr;</span>
-          </a>
-        ) : (
-          <div className={styles.setup} role="status">
-            The Telegram bot link has not been configured. Add
-            {' '}<code>VITE_TELEGRAM_BOT_USERNAME</code> to the website&rsquo;s
-            environment to enable it.
+            {botUrl && (
+              <a className={styles.action} href={botUrl} target="_blank" rel="noopener noreferrer">
+                Open CivicText on Telegram <span aria-hidden="true">&rarr;</span>
+              </a>
+            )}
           </div>
-        )}
+
+          <figure className={styles.qrCard}>
+            <img
+              className={styles.qrImage}
+              src="/civictext-telegram-qr.png"
+              alt="QR code for opening the Civic Grant Bot on Telegram"
+            />
+            <figcaption className={styles.qrCaption}>
+              <strong>Scan to open the bot</strong>
+              <span>Find us on Telegram at @CIVICGRANTBOT</span>
+            </figcaption>
+          </figure>
+        </div>
 
         <div className={styles.details}>
           <article className={styles.card}>
