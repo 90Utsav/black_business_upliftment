@@ -65,4 +65,11 @@ Set `VITE_TELEGRAM_BOT_USERNAME` for website bot links. Backend deployment requi
 
 ## License
 
-See [LICENSE](LICENSE).
+The root [vercel.json](./vercel.json) configures Vercel as a multi-service
+project: the Vite app is served by the `app` service, `/api/*` requests are
+forwarded to the FastAPI `backend` service, and all other paths go to the app.
+Configure the backend's `TELEGRAM_TOKEN` and LLM settings as Vercel environment
+variables. Set `VITE_TELEGRAM_BOT_USERNAME` for the website's Telegram links.
+
+The Grants page uses bundled sample listings and does not require a hosted
+database or backend connection.
