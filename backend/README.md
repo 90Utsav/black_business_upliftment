@@ -80,3 +80,16 @@ python tests/eval/run.py all
 ```
 
 See [system architecture](../docs/ARCHITECTURE.md) for component responsibilities, data sources, and current limitations.
+
+## Demo waitlist
+
+When no grant matches in Telegram, the bot asks whether the user wants to join
+its waitlist. `/waitlist` saves the latest unmatched request and chat ID to
+`subscriptions`; `/skip` discards the pending request. Repeating `/waitlist`
+without another unmatched request does not add a duplicate. The pending request
+is stored in `waitlist_pending` before consent and removed on acceptance,
+decline, or the next completed grant search. Automatic notifications are not
+implemented.
+
+For the demo, send a funding request that returns no match, then send `/waitlist`.
+The bot confirms that the request was saved.

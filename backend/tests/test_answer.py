@@ -164,3 +164,23 @@ def test_money_and_sentence_helpers():
     assert answer._money(None, None) == "amount varies"
     assert answer._money(None, 500) == "up to $500"
     assert answer._first_sentence("One. Two.") == "One."
+
+
+def test_waitlist_requires_consent_and_only_saves_once(conn):
+    req = Request(need='tattoo parlor', search_query='tattoo parlor grants')
+    reply = ask(conn, 'tattoo parlor', req, chat_id=42)
+    assert '/waitlist' in reply
+    assert conn.execute('SELECT COUNT(*) FROM subscriptions').fetchone()[0] == 0
+    assert 'No pending' in answer.process_grant_request('/waitlist', 99, conn=conn)
+    assert "You're on the waitlist" in answer.process_grant_request('/waitlist', 42, conn=conn)
+    answer.process_grant_request('/waitlist', 42, conn=conn)
+    rows = conn.execute('SELECT * FROM subscriptions').fetchall()
+    assert len(rows) == 1 and rows[0]['contact'] == '42'
+    assert rows[0]['query_text'] == 'tattoo parlor'
+
+
+def test_decline_waitlist(conn):
+    ask(conn, 'tattoo parlor', Request(need='tattoo parlor', search_query='tattoo parlor grants'), chat_id=42)
+    assert "haven't been added" in answer.process_grant_request('/skip', 42, conn=conn)
+    assert conn.execute('SELECT COUNT(*) FROM subscriptions').fetchone()[0] == 0
+    assert conn.execute('SELECT COUNT(*) FROM waitlist_pending').fetchone()[0] == 0

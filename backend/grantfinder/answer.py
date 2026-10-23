@@ -5,7 +5,7 @@
 Flow: understand -> (greeting / off-topic / too vague answered without searching)
       -> hybrid search -> reply built from the stored grant's own fields (no LLM-written
       facts, so it cannot invent a deadline or amount) -> no match: pseudo answer
-      plus the SBIR fallback (requests are not saved).
+      plus the SBIR fallback and an optional waitlist signup.
 """
 from __future__ import annotations
 
@@ -23,6 +23,25 @@ log = logging.getLogger(__name__)
 # re-check with `python -m grantfinder.cli chat ...` after adding real grants.
 MIN_SCORE = 0.93
 EXTRA_MATCHES = 2     # more grants listed under the best one
+
+WAITLIST_OFFER = ("Would you like to join the waitlist for this request? "
+                  "Reply /waitlist to save your request and chat ID, or /skip to decline.")
+
+
+def waitlist_reply(conn, chat_id, accept):
+    if chat_id is None:
+        return "Please use your Telegram chat to join the waitlist."
+    with conn:
+        row = conn.execute("SELECT * FROM waitlist_pending WHERE contact=?", (str(chat_id),)).fetchone()
+        if row is None:
+            return "No pending waitlist request. Tell me what you need funding for first."
+        if accept:
+            conn.execute(
+                "INSERT INTO subscriptions (contact, query_text, extracted, created_at) VALUES (?, ?, ?, ?)",
+                (str(chat_id), row["query_text"], row["extracted"], db.now()))
+        conn.execute("DELETE FROM waitlist_pending WHERE contact=?", (str(chat_id),))
+    return ("You're on the waitlist and will be notified when a matching grant is available!" if accept else
+            "No problem — you haven't been added to the waitlist.")
 
 WELCOME = ("Hi! I help small businesses and community groups find grants (free money, not loans).\n\n"
            "Tell me about your business and what you need the money for. For example:\n"
@@ -96,6 +115,14 @@ def find_matches(conn: sqlite3.Connection, req: Request, embeddings=None, min_sc
 def process_grant_request(user_text: str, chat_id: str | int | None = None, *, conn=None, llm=None,
                           embeddings=None, min_score: float = MIN_SCORE) -> str:
     text = (user_text or "").strip()
+    if text.lower() in ("/waitlist", "/skip"):
+        owned = conn is None
+        connection = conn if conn is not None else db.connect()
+        try:
+            return waitlist_reply(connection, chat_id, text.lower() == "/waitlist")
+        finally:
+            if owned:
+                connection.close()
     if not text or _GREETING.match(text):
         return WELCOME
     try:
@@ -113,17 +140,30 @@ def process_grant_request(user_text: str, chat_id: str | int | None = None, *, c
     if not keywords(req, text)[0]:  # e.g. "any grants in Ohio?": nothing specific to search for
         return TOO_VAGUE
 
-    conn = conn or db.connect()
+    owned = conn is None
+    conn = conn if conn is not None else db.connect()
     try:
         hits = find_matches(conn, req, embeddings, min_score, text)
+        if chat_id is not None:
+            with conn:
+                conn.execute("DELETE FROM waitlist_pending WHERE contact=?", (str(chat_id),))
+                if not hits:
+                    conn.execute("INSERT INTO waitlist_pending (contact, query_text, extracted, created_at) "
+                                 "VALUES (?, ?, ?, ?)",
+                                 (str(chat_id), text, req.model_dump_json(), db.now()))
     except Exception:
         log.exception("search failed")
         return TROUBLE
+    finally:
+        if owned:
+            conn.close()
     if hits:
         reply = "Best match for you:\n\n" + format_grant(hits[0][2])
         if len(hits) > 1:
             reply += "\n\nAlso worth a look:\n" + "\n".join(f"- {h[2]['title']}: {h[2]['url']}" for h in hits[1:])
         return reply
 
-    # Demo placeholder: a pseudo answer for the request. The request is deliberately not saved.
-    return PSEUDO_ANSWER.format(ask=req.need or text) + "\n\n" + SBIR_SMS
+    reply = PSEUDO_ANSWER.format(ask=req.need or text)
+    if chat_id is not None:
+        reply += "\n\n" + WAITLIST_OFFER
+    return reply + "\n\n" + SBIR_SMS

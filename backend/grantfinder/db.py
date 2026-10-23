@@ -9,6 +9,13 @@ from .config import DB_PATH
 from .models import Grant
 
 SCHEMA = """
+-- Most recent unmatched request, held until the user accepts or declines.
+CREATE TABLE IF NOT EXISTS waitlist_pending (
+    contact TEXT PRIMARY KEY,
+    query_text TEXT NOT NULL,
+    extracted TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS grants (
     id           TEXT PRIMARY KEY,           -- "<source>:<external_id>"
     source       TEXT NOT NULL,
