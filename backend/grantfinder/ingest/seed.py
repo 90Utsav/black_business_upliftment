@@ -1,4 +1,4 @@
-"""Load hand-curated grants: data/seed_grants.json (verified or sample) and data/listed_grants.json
+"""Load hand-curated grants: data/seed_grants.json (verified) and data/listed_grants.json
 (unverified third-party listings, stored with source "listing")."""
 from __future__ import annotations
 

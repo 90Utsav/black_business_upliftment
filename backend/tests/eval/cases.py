@@ -1,7 +1,7 @@
 """Hand-written evaluation messages. Each case is (message, acceptable outcomes).
 
 An outcome is a substring of the matched grant's title, or one of NONE (no grant fits), OTHER (not a grant
-request), GREETING, VAGUE (asks a follow-up), ANY (any grant is fine). These are written for the 30 sample grants
+request), GREETING, VAGUE (asks a follow-up), ANY (any grant is fine). These are written for the stored grants
 in data/seed_grants.json; rewrite the expectations when the data changes.
 
 TUNED: 51 messages that the matching code was tuned against, so a pass here only means "nothing regressed".

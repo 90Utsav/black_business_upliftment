@@ -109,19 +109,11 @@ def test_state_filter_hides_other_states(conn):
     assert "Bakery Oven Grant" in ask(conn, "bakery in Georgia", req)
 
 
-def test_no_match_without_chat_id_saves_nothing(conn):
-    reply = ask(conn, "tattoo parlor", Request(need="tattoo parlor", search_query="tattoo parlor grants"))
-    assert SBIR_SMS in reply and "saved your request" not in reply
-    assert conn.execute("SELECT COUNT(*) FROM subscriptions").fetchone()[0] == 0
-
-
-def test_no_match_with_chat_id_saves_one_subscription(conn):
+def test_no_match_gives_pseudo_answer_and_saves_nothing(conn):
     req = Request(need="tattoo parlor", search_query="tattoo parlor grants")
-    for _ in range(2):  # same person repeating the ask must not add a second row
-        reply = ask(conn, "tattoo parlor", req, chat_id=42)
-    assert answer.SAVED in reply and SBIR_SMS in reply
-    rows = conn.execute("SELECT contact, query_text FROM subscriptions").fetchall()
-    assert [(r["contact"], r["query_text"]) for r in rows] == [("42", "tattoo parlor")]
+    reply = ask(conn, "tattoo parlor", req, chat_id=42)
+    assert "tattoo parlor" in reply and SBIR_SMS in reply
+    assert conn.execute("SELECT COUNT(*) FROM subscriptions").fetchone()[0] == 0
 
 
 def test_greeting_other_and_vague_never_search(conn):

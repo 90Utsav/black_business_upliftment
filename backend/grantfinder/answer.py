@@ -4,8 +4,8 @@
 
 Flow: understand -> (greeting / off-topic / too vague answered without searching)
       -> hybrid search -> reply built from the stored grant's own fields (no LLM-written
-      facts, so it cannot invent a deadline or amount) -> no match: save a subscription
-      and show the SBIR fallback.
+      facts, so it cannot invent a deadline or amount) -> no match: pseudo answer
+      plus the SBIR fallback (requests are not saved).
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from .understand import US_STATES, Request, understand
 
 log = logging.getLogger(__name__)
 
-# cosine + 0.4 * keyword overlap. On the sample data real matches scored >= 1.00 and junk <= 0.86;
+# cosine + 0.4 * keyword overlap. On the stored data real matches scored >= 1.00 and junk <= 0.86;
 # re-check with `python -m grantfinder.cli chat ...` after adding real grants.
 MIN_SCORE = 0.93
 EXTRA_MATCHES = 2     # more grants listed under the best one
@@ -32,7 +32,9 @@ OFF_TOPIC = ("I can only help find grants, which is free funding, not loans. "
 TOO_VAGUE = ("Happy to help! What kind of business or project do you have, and what do you need "
              "the money for? A state helps too, for example: \"bakery in Georgia, need an oven\".")
 TROUBLE = "Sorry, I'm having trouble right now. Please try again in a minute."
-SAVED = "I've saved your request and will message you here if a matching grant is added."
+PSEUDO_ANSWER = ("Thanks for sharing that you need help with \"{ask}\". I don't have a verified grant for that yet, "
+                 "but programs like it usually fund equipment, inventory, or startup costs for small businesses. "
+                 "Check your state's small business office and local community foundations.")
 
 
 # Plain greetings/commands are answered without an LLM call: faster, free, and works when the LLM is down.
@@ -64,16 +66,6 @@ def format_grant(r: sqlite3.Row) -> str:
              f"Deadline: {deadline}", desc or None, f"Who can apply: {who}" if who else None,
              f"Apply: {r['url']}" if who else f"View more details: {r['url']}"]
     return "\n".join(l for l in lines if l)
-
-
-def _save_subscription(conn: sqlite3.Connection, chat_id: str, text: str, req: Request) -> None:
-    """One open subscription per (person, message): repeating the same ask does not add rows."""
-    dup = conn.execute("SELECT 1 FROM subscriptions WHERE contact=? AND query_text=? AND notified_at IS NULL",
-                       (str(chat_id), text)).fetchone()
-    if not dup:
-        conn.execute("INSERT INTO subscriptions (contact, query_text, extracted, created_at) VALUES (?,?,?,?)",
-                     (str(chat_id), text, req.model_dump_json(), db.now()))
-        conn.commit()
 
 
 def is_vague(req: Request) -> bool:
@@ -133,8 +125,5 @@ def process_grant_request(user_text: str, chat_id: str | int | None = None, *, c
             reply += "\n\nAlso worth a look:\n" + "\n".join(f"- {h[2]['title']}: {h[2]['url']}" for h in hits[1:])
         return reply
 
-    reply = "I couldn't find a grant that fits that yet.\n\n"
-    if chat_id is not None:
-        _save_subscription(conn, str(chat_id), text, req)
-        reply += SAVED + "\n\n"
-    return reply + SBIR_SMS
+    # Demo placeholder: a pseudo answer for the request. The request is deliberately not saved.
+    return PSEUDO_ANSWER.format(ask=req.need or text) + "\n\n" + SBIR_SMS
